@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 import pdb
 import matplotlib.pyplot as plt
 
@@ -51,7 +52,7 @@ class WarmUp:
         self.update_op = self.optimizer.minimize(self.loss)
 
         # sampling operation
-        dist = tf.distributions.Categorical(probs=self.probs)
+        dist = tfp.distributions.Categorical(probs=self.probs)
         self.get_sample_op = dist.sample()
 
     def train(self, sess, train_data, valid_data=None, niter=1000, batch_size=64):
