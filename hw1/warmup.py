@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import pdb
 import matplotlib.pyplot as plt
 
 import os
