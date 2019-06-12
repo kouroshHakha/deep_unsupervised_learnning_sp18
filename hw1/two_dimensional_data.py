@@ -16,12 +16,14 @@ class TwoDimensionAR:
                  learning_rate=0.001,
                  batch_size=64,
                  niter=1000,
+                 hidden_layers=(20,20,20),
                  ):
 
         self.dim = 200
         self.lr = learning_rate
         self.batch_size = batch_size
         self.niter = niter
+        self.hidden_layers=hidden_layers
 
         # graph
         self.graph = None
@@ -83,7 +85,7 @@ class TwoDimensionAR:
         with tf.name_scope('x2'):
             self.probs_x2_given_x1 = self.make_x2_model(self.data_ph[:, 0],
                                                         output_size=self.dim,
-                                                        hidden_size_list=[20, 20, 20],
+                                                        hidden_size_list=self.hidden_layers,
                                                         name='theta2')
 
             self.mask = tf.one_hot(self.data_ph[:, 1], self.dim)
@@ -172,12 +174,12 @@ class TwoDimensionAR:
             init_op = tf.global_variables_initializer()
             sess.run(init_op)
             # deliverables
-            results = self.train(sess, train_data, valid_data, niter=500, batch_size=256)
+            results = self.train(sess, train_data, valid_data, niter=500, batch_size=128)
             results['data'] = data
             results['model'] = self.get_samples(sess)
 
         self.print_results(results)
 
 if __name__ == '__main__':
-    agent = TwoDimensionAR()
+    agent = TwoDimensionAR(hidden_layers=(500,500))
     agent.main()
