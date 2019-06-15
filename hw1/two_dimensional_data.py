@@ -17,6 +17,8 @@ class TwoDimensionAR:
                  batch_size=64,
                  niter=1000,
                  hidden_layers=(20,20,20),
+                 valid_rate=50,
+                 activation=tf.nn.relu,
                  ):
 
         self.dim = 200
@@ -24,6 +26,8 @@ class TwoDimensionAR:
         self.batch_size = batch_size
         self.niter = niter
         self.hidden_layers=hidden_layers
+        self.valid_rate = valid_rate
+        self.activation = activation
 
         # graph
         self.graph = None
@@ -56,7 +60,7 @@ class TwoDimensionAR:
 
     def make_x2_model(self, input_tensor: tf.Tensor, output_size: int,  hidden_size_list: List[int],
                       name: str) -> tf.Tensor:
-        with tf.name_scope(name):
+        with tf.variable_scope(name):
             input_rank = len(input_tensor.shape.as_list())
             if input_rank == 1:
                 layer = tf.expand_dims(input_tensor, axis=-1)
@@ -64,10 +68,9 @@ class TwoDimensionAR:
                 layer = input_tensor
 
             layer = tf.cast(layer, dtype=tf.float32)
-            # layer = tf.one_hot(layer, depth=self.dim, axis=-1)
 
             for i, hsize in enumerate(hidden_size_list):
-                layer = tf.layers.dense(layer, hsize, activation=tf.nn.tanh, name=f'layer_{i}')
+                layer = tf.layers.dense(layer, hsize, activation=self.activation, name=f'layer_{i}')
             self.output_logits = tf.layers.dense(layer, output_size, name='out_layer')
             output_prob = tf.nn.softmax(self.output_logits)
 
@@ -83,7 +86,8 @@ class TwoDimensionAR:
         self.probs_x1 = tf.nn.softmax(self.theta_param1, name='x1')
         self.p_of_x1 = tf.gather(self.probs_x1, self.data_ph[:, 0])
         with tf.name_scope('x2'):
-            self.probs_x2_given_x1 = self.make_x2_model(self.data_ph[:, 0],
+            self.nn_input = tf.one_hot(self.data_ph[:, 0], depth=self.dim)
+            self.probs_x2_given_x1 = self.make_x2_model(self.nn_input,
                                                         output_size=self.dim,
                                                         hidden_size_list=self.hidden_layers,
                                                         name='theta2')
@@ -95,17 +99,23 @@ class TwoDimensionAR:
         self.p_of_x1_x2 = tf.multiply(self.p_of_x1, self.p_of_x2_given_x1, name='x1_x2')
 
         self.loss = -tf.reduce_mean(tf.log(self.p_of_x1_x2), name='loss')
-
         with tf.name_scope('optimizer'):
-            self.optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
+            self.optimizer = tf.train.AdamOptimizer(self.lr)
+            self.variable_list = tf.get_collection(key=tf.GraphKeys.TRAINABLE_VARIABLES,
+                                                   scope='\w*theta\w*')
+            grads_and_vars = self.optimizer.compute_gradients(self.loss, self.variable_list)
+            self.var_tensors = [gv[1] for gv in grads_and_vars]
+            self.var_names = [gv[1].name for gv in grads_and_vars]
+            self.grad_tensors = [gv[0] for gv in grads_and_vars]
             self.update_op = self.optimizer.minimize(self.loss)
+            self.update_op = self.optimizer.apply_gradients(grads_and_vars)
 
         # sampling
         dist = tfp.distributions.Categorical(probs=self.probs_x2_given_x1)
         self.get_x2_sample_op = dist.sample()
 
 
-    def train(self, sess, train_data, valid_data=None, niter=1000, batch_size=64):
+    def train(self, sess, train_data, valid_data,* ,niter=1, batch_size=32):
 
         train_xvar, valid_xvar = [], []
         train_yvar, valid_yvar = [], []
@@ -115,17 +125,24 @@ class TwoDimensionAR:
             xdata_idx = np.random.choice(indices, batch_size, replace=False)
             xdata = train_data[xdata_idx, :]
             feed_dict = {self.data_ph: xdata}
-            # pdb.set_trace()
-            _, train_loss = sess.run([self.update_op, self.loss], feed_dict)
+            train_loss = sess.run(self.loss, feed_dict)
             train_xvar.append(itr)
             train_yvar.append(train_loss)
 
-            if itr % (niter // 10) == 0:
-                print(f'[info] iter {itr}: train_loss={train_loss}')
+            if itr % self.valid_rate == 0:
+                print_state = f'[info] iter {itr}: train_loss={train_loss}'
                 if valid_data is not None:
                     valid_loss = sess.run(self.loss, feed_dict={self.data_ph: valid_data})
                     valid_xvar.append(itr)
                     valid_yvar.append(valid_loss)
+                    print_state += f', valid_loss={valid_loss}'
+                print(print_state)
+
+                # grads = sess.run(self.grad_tensors, feed_dict)
+                # grad_dict = dict(zip(self.var_names, grads))
+                # pdb.set_trace()
+            # update after printing losses
+            sess.run(self.update_op, feed_dict)
 
         return dict(
             train_x=train_xvar,
@@ -174,12 +191,29 @@ class TwoDimensionAR:
             init_op = tf.global_variables_initializer()
             sess.run(init_op)
             # deliverables
-            results = self.train(sess, train_data, valid_data, niter=500, batch_size=128)
+            results = self.train(sess, train_data, valid_data,
+                                 niter=self.niter,
+                                 batch_size=self.batch_size)
             results['data'] = data
             results['model'] = self.get_samples(sess)
 
         self.print_results(results)
 
 if __name__ == '__main__':
-    agent = TwoDimensionAR(hidden_layers=(500,500))
+
+    learning_rates = [3e-3, 1e-3, 3e-4, 1e-4]
+    batch_sizes = [64, 128, 256, 512]
+    activation_rates = [tf.nn.relu, tf.nn.relu6, tf.nn.tanh, tf.nn.sigmoid]
+    structures = [
+        (200, 200, 200, 200, 200),
+        (200, 300, 200),
+        (500, 500, 500),
+        (100, 50, 100),
+    ]
+    agent = TwoDimensionAR(learning_rate=1e-4,
+                           niter=5000,
+                           batch_size=256,
+                           valid_rate = 50,
+                           activation=tf.nn.relu,
+                           hidden_layers=(200, 200, 200, 200, 200))
     agent.main()
