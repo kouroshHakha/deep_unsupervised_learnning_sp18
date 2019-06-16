@@ -7,8 +7,14 @@ from path import Path
 import matplotlib.pyplot as plt
 import pdb
 import os
+import time
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
+def log(tensor, base):
+    numerator = tf.log(tensor)
+    denominator = tf.log(tf.constant(base, dtype=numerator.dtype))
+    return numerator / denominator
 
 class MadeTwoDim:
 
@@ -17,14 +23,22 @@ class MadeTwoDim:
                  batch_size=64,
                  niter=1000,
                  hidden_layers=(20,20,20),
+                 valid_rate=50,
+                 activation=tf.nn.relu,
+                 randomize_order=False,
+                 randomize_masks=False
                  ):
 
-        self.dim = 200
         self.ninputs=2
+        self.dim = 200
         self.lr = learning_rate
         self.batch_size = batch_size
         self.niter = niter
-        self.hidden_layers = list(hidden_layers)
+        self.hidden_layers = hidden_layers
+        self.valid_rate = valid_rate
+        self.activation = activation
+        self.randomize_order = randomize_order
+        self.randomize_masks = randomize_masks
 
         # graph
         self.graph = None
@@ -51,7 +65,6 @@ class MadeTwoDim:
         samples = np.stack([samples_x1, samples_x2], axis=0)
         samples = samples.T
         return samples
-
 
     def _get_conditional_one_matrix(self, m_minus: np.ndarray, m_plus: np.ndarray) -> np.ndarray:
         mask = np.zeros([len(m_plus), len(m_minus)])
@@ -92,73 +105,19 @@ class MadeTwoDim:
         np.random.shuffle(indices)
         return indices
 
-    def train(self,
-              sess,
-              train_data,
-              valid_data=None,
-              niter=1000,
-              batch_size=64,
-              randomize_order=True,
-              randomize_mask=True,
-              ):
-
-        train_xvar, valid_xvar = [], []
-        train_yvar, valid_yvar = [], []
-
-        indices = np.arange(len(train_data))
-
-        order = self._get_random_order()
-        masks = self._get_random_masks(order)
-        for itr in range(niter):
-            xdata_idx = np.random.choice(indices, batch_size, replace=False)
-            xdata = train_data[xdata_idx, :]
-
-            feed_dict={
-                self.data_ph: xdata,
-                self.order: order,
-            }
-            feed_dict.update(dict(zip(self.masks, masks)))
-
-            _, train_loss = sess.run([self.update_op, self.loss], feed_dict)
-
-            train_xvar.append(itr)
-            train_yvar.append(train_loss)
-
-            if randomize_order:
-                order = self._get_random_order()
-            if randomize_mask:
-                masks = self._get_random_masks(order)
-
-            if itr % (niter // 10) == 0:
-                print(f'[info] iter {itr}: train_loss={train_loss}')
-                if valid_data is not None:
-                    feed_dict={
-                        self.data_ph: xdata,
-                        self.order: order,
-                    }
-                    feed_dict.update(dict(zip(self.masks, masks)))
-                    valid_loss = sess.run(self.loss, feed_dict=feed_dict)
-                    valid_xvar.append(itr)
-                    valid_yvar.append(valid_loss)
-
-        results = dict(
-            train_x=train_xvar,
-            train_y=train_yvar,
-            valid_x=valid_xvar,
-            valid_y=valid_yvar
-        )
-        return masks, order, results
-
     def _make_masked_p(self,
                        input: tf.Tensor,
                        mask: tf.Tensor,
                        units: int,
                        activation: Callable = None,
-                       weight_initilizer: Callable = tf.random_normal_initializer,
+                       weight_initilizer: Callable = None,
                        bias_initilizer: Callable = tf.zeros_initializer,
                        name: str = None,
                        last_layer: bool =False) -> tf.Tensor:
 
+        if weight_initilizer is None:
+            prev_size = input.shape.as_list()[-1]
+            weight_initilizer = tf.random_normal_initializer(0, np.sqrt(2 / (prev_size + units)))
         with tf.name_scope(name):
             weights = tf.get_variable(shape=(input.shape[-1], units), dtype=tf.float32,
                                       initializer=weight_initilizer, name=f'{name}/weight')
@@ -179,7 +138,6 @@ class MadeTwoDim:
                          input: tf.Tensor,
                          masks: List[tf.Tensor],
                          hidden_layers: List[int],
-                         mid_activation: Callable = tf.nn.relu,
                          name=''):
 
         assert len(hidden_layers) + 1 == len(masks), 'number of masks doesn\'t match the number ' \
@@ -188,7 +146,7 @@ class MadeTwoDim:
         layer = tf.cast(input, tf.float32)
         layers.append(layer)
         for i, (mask, size_h) in enumerate(zip(masks[:-1], hidden_layers)):
-            layer = self._make_masked_p(layer, mask, size_h, mid_activation, name=f'layer_{i}')
+            layer = self._make_masked_p(layer, mask, size_h, self.activation, name=f'layer_{i}')
             layers.append(layer)
 
         output = self._make_masked_p(layer, masks[-1], self.dim, name=f'layer_out',
@@ -220,37 +178,135 @@ class MadeTwoDim:
 
         self.output, self.layers = self._make_masked_mlp(self.input_shuff, self.masks,
                                                          hidden_layers=self.hidden_layers,
-                                                         mid_activation=tf.nn.tanh,
                                                          name='model')
 
         self.one_hot_mask = tf.one_hot(self.data_ph, depth=self.dim)
         self.joint_prob = tf.reduce_sum(self.output * self.one_hot_mask, axis=-1)
 
-        self.log_likleihood = tf.math.log(self.joint_prob)
-        self.neg_log_likleihood = -tf.reduce_sum(self.log_likleihood, axis=-1)
+        self.neg_log_likleihood = -tf.reduce_sum(log(self.joint_prob, 2), axis=-1)
         self.loss = tf.reduce_mean(self.neg_log_likleihood)
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
         self.update_op = self.optimizer.minimize(self.loss)
 
         # sampling
-        dist_x1 = tfp.distributions.Categorical(probs=self.output[:, 0])
-        self.get_x1_sample_op = dist_x1.sample()
-        dist_x2 = tfp.distributions.Categorical(probs=self.output[:, 1])
-        self.get_x2_sample_op = dist_x2.sample()
+        dist = tfp.distributions.Categorical(probs=self.output)
+        self.get_sample_op = dist.sample()
 
-    def get_samples(self, sess, order, mask, nsamples=100000):
-        # xrange = np.arange(200)
-        # feed_dict={
-        #     self.data_ph: xr,
-        #     self.order: order,
-        # }
-        # feed_dict.update(dict(zip(self.masks, masks)))
-        # x1_dist = sess.run(self.get_x1_sample_op, feed_dict=)
-        # x1_samples = np.random.choice(xrange, nsamples, replace=True, p=x1_dist)
-        # dummy_data = np.stack([x1_samples, x1_samples], axis=-1)
-        # x2_samples = sess.run(self.get_x2_sample_op, feed_dict={self.data_ph: dummy_data})
-        # samples = np.stack([x1_samples, x2_samples], axis=-1)
-        samples = None
+    def train(self,
+              sess,
+              train_data,
+              valid_data=None,
+              randomize_order=True,
+              randomize_mask=True,
+              *,
+              niter=1000,
+              batch_size=64,
+              ):
+
+        train_xvar, valid_xvar = [], []
+        train_yvar, valid_yvar = [], []
+
+        indices = np.arange(len(train_data))
+
+        order = self._get_random_order()
+        masks = self._get_random_masks(order)
+        for itr in range(niter):
+            xdata_idx = np.random.choice(indices, batch_size, replace=False)
+            xdata = train_data[xdata_idx, :]
+
+            feed_dict={
+                self.data_ph: xdata,
+                self.order: order,
+            }
+            feed_dict.update(dict(zip(self.masks, masks)))
+
+            train_loss = sess.run(self.loss, feed_dict)
+
+            train_xvar.append(itr)
+            train_yvar.append(train_loss)
+
+            if randomize_order:
+                order = self._get_random_order()
+            if randomize_mask:
+                masks = self._get_random_masks(order)
+
+            if itr % self.valid_rate == 0:
+                print_state = f'[info] iter {itr}: train_loss={train_loss}'
+                if valid_data is not None:
+                    feed_dict={
+                        self.data_ph: xdata,
+                        self.order: order,
+                    }
+                    feed_dict.update(dict(zip(self.masks, masks)))
+                    valid_loss = sess.run(self.loss, feed_dict=feed_dict)
+                    valid_xvar.append(itr)
+                    valid_yvar.append(valid_loss)
+                    print_state += f', valid_loss={valid_loss}'
+
+                print(print_state)
+            # update after printing losses
+            sess.run(self.update_op, feed_dict)
+
+        results = dict(
+            train_x=train_xvar,
+            train_y=train_yvar,
+            valid_x=valid_xvar,
+            valid_y=valid_yvar
+        )
+
+        # make these None so sampling knows what to do
+        if randomize_order:
+            order = None
+        if randomize_mask:
+            masks = None
+
+        return masks, order, results
+
+    def get_samples(self, sess, order=None, masks=None, *,  nsamples=100000, nruns_per_sample=1):
+        # instead of averaging the probablities of each dimension while changing mask and order
+        # we generate samples with random combinations. (we don't sample according to the average
+        # of probabilities, we randomly change the inputs that change the probs)
+        print(f'sampling {nsamples} vectors from the model ... ')
+        s = time.time()
+
+        order_shuffling = order is None
+        mask_shuffling = masks is None
+
+        if order_shuffling:
+            order_list = [self._get_random_order() for _ in range(nruns_per_sample)]
+            masks_list = [self._get_random_masks(order_list[i]) for i in range(nruns_per_sample)]
+        elif not order_shuffling and mask_shuffling:
+            order_list = [order for _ in range(nruns_per_sample)]
+            masks_list = [self._get_random_masks(order_list[i]) for i in range(nruns_per_sample)]
+        else:
+            order_list = [order]
+            masks_list = [masks]
+
+        nsamples_arr = np.random.choice(np.arange(nruns_per_sample), nsamples, replace=True)
+        nsamples_list = [np.sum(nsamples_arr == i) for i in range(nruns_per_sample)]
+
+        samples_list = []
+        for order, masks, sample_size in zip(order_list, masks_list, nsamples_list):
+            xdata = np.zeros([sample_size, self.ninputs])
+            dim_samples = []
+            for i in order:
+                feed_dict={
+                    self.data_ph: xdata,
+                    self.order: order,
+                }
+                feed_dict.update(dict(zip(self.masks, masks)))
+                samples = sess.run(self.get_sample_op, feed_dict=feed_dict)
+                var_samples = samples[:, i]
+
+                dim_samples.append(var_samples)
+                xdata[:, i] = var_samples
+
+            re_order = np.argsort(order)
+            dim_samples = np.array(dim_samples)
+            samples_list.append(np.transpose(dim_samples[re_order]))
+
+        samples = np.concatenate(samples_list)
+        print(f'finished sampling in {time.time() - s} seconds.')
         return samples
 
     @staticmethod
@@ -262,12 +318,12 @@ class MadeTwoDim:
         plt.title('negative log likelihood')
         plt.legend()
 
-        # plt.figure(2)
-        # plt.hist2d(results['data'][:, 0], results['data'][:, 1], bins=200,
-        #            range=[[0,199], [0, 199]], cmap=plt.get_cmap('hot'))
-        # plt.figure(3)
-        # plt.hist2d(results['model'][:, 0], results['model'][:, 1], bins=200,
-        #            range=[[0,199], [0, 199]], cmap=plt.get_cmap('hot'))
+        plt.figure(2)
+        plt.hist2d(results['data'][:, 0], results['data'][:, 1], bins=200,
+                   range=[[0,199], [0, 199]], cmap=plt.get_cmap('hot'))
+        plt.figure(3)
+        plt.hist2d(results['model'][:, 0], results['model'][:, 1], bins=200,
+                   range=[[0,199], [0, 199]], cmap=plt.get_cmap('hot'))
         plt.show()
 
     def main(self):
@@ -282,19 +338,30 @@ class MadeTwoDim:
             init_op = tf.global_variables_initializer()
             sess.run(init_op)
             # deliverables
-            fmask, forder, results = self.train(sess,
-                                                train_data,
-                                                valid_data,
-                                                niter=500,
-                                                batch_size=128,
-                                                randomize_mask=False,
-                                                randomize_order=False)
-
-            results['model'] = self.get_samples(sess, forder, fmask)
+            fmasks, forder, results = self.train(sess,
+                                                 train_data,
+                                                 valid_data,
+                                                 niter=self.niter,
+                                                 batch_size=self.batch_size,
+                                                 randomize_mask=self.randomize_masks,
+                                                 randomize_order=self.randomize_order)
+            results['data'] = data
+            results['model'] = self.get_samples(sess, forder, fmasks,
+                                                nsamples=100000,
+                                                nruns_per_sample=5)
 
         self.print_results(results)
 
 
 if __name__ == '__main__':
-    agent = MadeTwoDim(hidden_layers=(300,400,400))
+    agent = MadeTwoDim(
+        learning_rate=1e-4,
+        niter=5000,
+        batch_size=256,
+        valid_rate = 50,
+        activation=tf.nn.relu,
+        hidden_layers=[200, 200, 200, 200, 200],
+        randomize_order=False,
+        randomize_masks=False,
+    )
     agent.main()

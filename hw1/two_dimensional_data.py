@@ -6,6 +6,7 @@ from path import Path
 import matplotlib.pyplot as plt
 import pdb
 import os
+import time
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
@@ -25,7 +26,7 @@ class TwoDimensionAR:
         self.lr = learning_rate
         self.batch_size = batch_size
         self.niter = niter
-        self.hidden_layers=hidden_layers
+        self.hidden_layers = hidden_layers
         self.valid_rate = valid_rate
         self.activation = activation
 
@@ -170,12 +171,15 @@ class TwoDimensionAR:
         plt.show()
 
     def get_samples(self, sess, nsamples=100000):
+        print(f'sampling {nsamples} vectors from the model ... ')
+        s = time.time()
         xrange = np.arange(200)
         x1_dist = sess.run(self.probs_x1)
         x1_samples = np.random.choice(xrange, nsamples, replace=True, p=x1_dist)
         dummy_data = np.stack([x1_samples, x1_samples], axis=-1)
         x2_samples = sess.run(self.get_x2_sample_op, feed_dict={self.data_ph: dummy_data})
         samples = np.stack([x1_samples, x2_samples], axis=-1)
+        print(f'finished sampling in {time.time() - s} seconds.')
         return samples
 
     def main(self):
