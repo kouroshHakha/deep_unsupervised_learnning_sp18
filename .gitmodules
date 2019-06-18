@@ -1,0 +1,3 @@
+[submodule "hw1/pytorch-made"]
+	path = hw1/pytorch-made
+	url = https://github.com/karpathy/pytorch-made.git
