@@ -7,6 +7,6 @@
 [submodule "hw1/PixelCNN"]
 	path = hw1/PixelCNN
 	url = https://github.com/j-min/PixelCNN.git
-[submodule "hw1/pixelcnn-pytorch"]
-	path = hw1/pixelcnn-pytorch
+[submodule "hw1/pixelcnn-pytorch2"]
+	path = hw1/pixelcnn-pytorch2
 	url = https://github.com/jzbontar/pixelcnn-pytorch.git
