@@ -2,7 +2,7 @@
 Implements Masked AutoEncoder for Density Estimation, by Germain et al. 2015
 Re-implementation by Andrej Karpathy based on https://arxiv.org/abs/1502.03509
 """
-
+from typing import List, cast
 import numpy as np
 
 import torch
@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # ------------------------------------------------------------------------------
-
 class MaskedLinear(nn.Linear):
     """ same as Linear except has a configurable mask on the weights """
     
@@ -26,7 +25,7 @@ class MaskedLinear(nn.Linear):
         return F.linear(input, self.mask * self.weight, self.bias)
 
 class MADE(nn.Module):
-    def __init__(self, nin, hidden_sizes, nout, num_masks=1, natural_ordering=False):
+    def __init__(self, nin, hidden_sizes, nout, num_masks=1, natural_ordering=False, seed=0):
         """
         nin: integer; number of inputs
         hidden sizes: a list of integers; number of units in hidden layers
@@ -49,25 +48,33 @@ class MADE(nn.Module):
         self.net = []
         hs = [nin] + hidden_sizes + [nout]
         for h0,h1 in zip(hs, hs[1:]):
-            self.net.extend([
+            self.net += [
+                    nn.BatchNorm1d(h0),
                     MaskedLinear(h0, h1),
-                    nn.ReLU(),
-                ])
+                    nn.ReLU()
+            ]
         self.net.pop() # pop the last ReLU for the output layer
         self.net = nn.Sequential(*self.net)
-        
+        self.net.apply(self.init_weights)
+
         # seeds for orders/connectivities of the model ensemble
         self.natural_ordering = natural_ordering
         self.num_masks = num_masks
-        self.seed = 0 # for cycling through num_masks orderings
+        self.seed = seed # for cycling through num_masks orderings
         
         self.m = {}
         self.update_masks() # builds the initial self.m connectivity
         # note, we could also precompute the masks and cache them, but this
         # could get memory expensive for large number of masks.
-        
-    def update_masks(self):
-        if self.m and self.num_masks == 1: return # only a single seed, skip for efficiency
+
+    def init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight, gain=10)
+            m.bias.data.fill_(0.01)
+
+    def update_masks(self, force_natural_ordering=False):
+        if self.m and self.num_masks == 1 and self.natural_ordering: return
+        # only a single seed, skip for efficiency
         L = len(self.hidden_sizes)
         
         # fetch the next seed and construct a random stream
@@ -75,14 +82,18 @@ class MADE(nn.Module):
         self.seed = (self.seed + 1) % self.num_masks
         
         # sample the order of the inputs and the connectivity of all neurons
-        self.m[-1] = np.arange(self.nin) if self.natural_ordering else rng.permutation(self.nin)
+        if self.natural_ordering or force_natural_ordering:
+            self.m[-1] = np.arange(self.nin)
+        else:
+            self.m[-1] = rng.permutation(self.nin)
+
         for l in range(L):
             self.m[l] = rng.randint(self.m[l-1].min(), self.nin-1, size=self.hidden_sizes[l])
 
         # construct the mask matrices
-        masks = [self.m[l-1][:,None] <= self.m[l][None,:] for l in range(L)]
+        masks: List[np.ndarray] = [self.m[l-1][:,None] <= self.m[l][None,:] for l in range(L)]
         masks.append(self.m[L-1][:,None] < self.m[-1][None,:])
-        
+
         # handle the case where nout = nin * k, for integer k > 1
         if self.nout > self.nin:
             k = int(self.nout / self.nin)
@@ -93,9 +104,9 @@ class MADE(nn.Module):
         layers = [l for l in self.net.modules() if isinstance(l, MaskedLinear)]
         for l,m in zip(layers, masks):
             l.set_mask(m)
-    
+
     def forward(self, x):
-        return self.net(x)
+        return self.net(x.float())
 
 # ------------------------------------------------------------------------------
 
@@ -103,37 +114,37 @@ if __name__ == '__main__':
     from torch.autograd import Variable
     
     # run a quick and dirty test for the autoregressive property
-    D = 10
+    D = 2
     rng = np.random.RandomState(14)
-    x = (rng.rand(1, D) > 0.5).astype(np.float32)
+    x = cast(np.ndarray, (rng.rand(1, D) > 0.5)).astype(np.float)
     
     configs = [
-        (D, [], D, False),                 # test various hidden sizes
-        (D, [200], D, False),
-        (D, [200, 220], D, False),
-        (D, [200, 220, 230], D, False),
-        (D, [200, 220], D, True),          # natural ordering test
-        (D, [200, 220], 2*D, True),       # test nout > nin
-        (D, [200, 220], 3*D, False),       # test nout > nin
+        # (D, [], D, False),                 # test various hidden sizes
+        # (D, [200], D, False),
+        # (D, [200, 220], D, False),
+        # (D, [200, 220, 230], D, False),
+        # (D, [200, 220], D, True),          # natural ordering test
+        # (D, [200, 220], 2*D, True),       # test nout > nin
+        # (D, [20, 20], 200*D, True),       # test nout > nin
+        (D, [20, 20], 20*D, False)
     ]
     
     for nin, hiddens, nout, natural_ordering in configs:
         
         print("checking nin %d, hiddens %s, nout %d, natural %s" % 
              (nin, hiddens, nout, natural_ordering))
-        model = MADE(nin, hiddens, nout, natural_ordering=natural_ordering)
-        
+        model = MADE(nin, hiddens, nout, natural_ordering=natural_ordering, num_masks=3, seed=2)
         # run backpropagation for each dimension to compute what other
         # dimensions it depends on.
         res = []
         for k in range(nout):
             xtr = torch.from_numpy(x)
             xtr.requires_grad_(True)
+            model.eval()
             xtrhat = model(xtr)
             loss = xtrhat[0,k]
             loss.backward()
-
-            depends = (xtr.grad[0].numpy() != 0).astype(np.uint8)
+            depends = (xtr.grad[0].numpy() != 0)
             depends_ix = list(np.where(depends)[0])
             isok = k % nin not in depends_ix
 
