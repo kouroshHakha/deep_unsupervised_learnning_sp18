@@ -1,3 +1,4 @@
+from typing import Any
 import torch
 import torch.optim as optim
 import torch.functional as F
@@ -13,6 +14,10 @@ import pdb
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+def to_compute_resource(tensor: torch.Tensor) -> Any:
+    if torch.cuda.is_available():
+        return tensor.cuda()
+    return tensor
 
 class Q2:
     def __init__(self,
@@ -72,7 +77,7 @@ class Q2:
             # fetch the next batch of data
             xb = x[step * b: step * b + b]
             # get the logits, potentially run the same batch a number of times, resampling each time
-            xbhat = torch.zeros([b, self.dim * d])
+            xbhat = to_compute_resource(torch.zeros([b, self.dim * d]))
 
             for s in range(navg_samples):
                 # perform order/connectivity-agnostic training by resampling the masks
@@ -86,7 +91,7 @@ class Q2:
             all_indices = np.arange(xbhat.shape[-1])
             mode_indices = all_indices % xb.shape[-1]
 
-            log_prob = torch.zeros((xb.shape[0], ))
+            log_prob = to_compute_resource(torch.zeros((xb.shape[0], )))
             for k in range(xb.shape[-1]):
                 indices = np.where(mode_indices == k)[0]
                 x_k = xbhat[:, indices]
@@ -106,7 +111,7 @@ class Q2:
 
     def gen_samples(self, nsamples=100000):
         self.model.eval()
-        x = torch.zeros([nsamples, self.nin])
+        x = to_compute_resource(torch.zeros([nsamples, self.nin]))
 
         nout = self.nin * self.dim
         all_indices = np.arange(nout)
