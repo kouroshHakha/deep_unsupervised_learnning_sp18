@@ -44,7 +44,7 @@ class ARPixelCNN:
         for step in range(nsteps):
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
             self.model(xin.float())
-            loss = self.model.loss(target=xin.long())
+            loss = self.model.loss(target=xin.long()) // b
 
             if mode == 'train':
                 self.opt.zero_grad()
