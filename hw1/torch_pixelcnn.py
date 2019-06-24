@@ -74,9 +74,9 @@ class ARPixelCNN:
             self.xtrain = self.xtrain.cuda()
             self.xtest = self.xtest.cuda()
             self.model = self.model.cuda()
-            if torch.cuda.device_count() > 1:
-                print("Let's use", torch.cuda.device_count(), "GPUs!")
-                self.model = PixelCNNParallel(self.model)
+            # if torch.cuda.device_count() > 1:
+            #     print("Let's use", torch.cuda.device_count(), "GPUs!")
+            #     self.model = PixelCNNParallel(self.model)
 
         self.opt = optim.Adam(self.model.parameters())
         print('number of model parameters: ',
