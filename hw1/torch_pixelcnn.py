@@ -59,7 +59,7 @@ class ARPixelCNN:
     def main(self, seed=10):
         np.random.seed(seed)
         torch.manual_seed(seed)
-        torch.cuda.seed_all(seed)
+        torch.cuda.manual_seed_all(seed)
 
         data = self.get_samples()
         dtrain = cast(np.ndarray, data['train']).transpose([0,3,1,2])
