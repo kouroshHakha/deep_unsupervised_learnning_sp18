@@ -19,12 +19,16 @@ class ARPixelCNN:
     def __init__(self,
                  data_file,
                  *,
+                 learning_rate=1e-3,
                  nepochs=1,
                  batch_size=128,
+                 feature_size=128,
                  ):
         self.file = data_file
         self.nepochs = nepochs
         self.batch_size = batch_size
+        self.feature_size = feature_size
+        self.learning_rate = learning_rate
 
         self.xtrain: torch.Tensor = None
         self.xtest: torch.Tensor = None
@@ -40,11 +44,13 @@ class ARPixelCNN:
         self.model.train(mode == 'train')
         nsamples = self.xtrain.shape[0]
         b = self.batch_size
-        nsteps = 1 if mode == 'test' else nsamples // b
+        nsteps = 1 if mode == 'test' else nsamples
         for step in range(nsteps):
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
+            if 0 in xin.shape:
+                continue
             self.model(xin.float())
-            loss = self.model.loss(target=xin.long()) // b
+            loss = self.model.loss(target=xin.long())
 
             if mode == 'train':
                 self.opt.zero_grad()
@@ -68,7 +74,7 @@ class ARPixelCNN:
         self.xtrain = torch.from_numpy(dtrain)
         self.xtest = torch.from_numpy(dtest)
 
-        self.model: nn.Module = PixelCNN(fm=128)
+        self.model: nn.Module = PixelCNN(fm=self.feature_size)
 
         if torch.cuda.is_available():
             self.xtrain = self.xtrain.cuda()
@@ -93,5 +99,10 @@ class ARPixelCNN:
 if __name__ == '__main__':
 
     file = sys.argv[1]
-    agent =  ARPixelCNN(file)
+    agent =  ARPixelCNN(file,
+                        nepochs=50,
+                        learning_rate=1e-4,
+                        batch_size=32,
+                        feature_size=32,
+                        )
     agent.main()

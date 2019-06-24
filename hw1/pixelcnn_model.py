@@ -49,11 +49,11 @@ class PixelCNN(nn.Module):
         super(PixelCNN, self).__init__()
         self.net = nn.Sequential(
             nn.BatchNorm2d(3), MaskedConv2d('A', 3,  fm, 3, 1, bias=True), nn.LeakyReLU(),
-            nn.BatchNorm2d(fm), ResBlock(fm), # 1
-            nn.BatchNorm2d(fm), ResBlock(fm), # 2
-            nn.BatchNorm2d(fm), ResBlock(fm), # 3
-            nn.BatchNorm2d(fm), ResBlock(fm), # 4
-            nn.BatchNorm2d(fm), ResBlock(fm), # 5
+            # nn.BatchNorm2d(fm), ResBlock(fm), # 1
+            # nn.BatchNorm2d(fm), ResBlock(fm), # 2
+            # nn.BatchNorm2d(fm), ResBlock(fm), # 3
+            # nn.BatchNorm2d(fm), ResBlock(fm), # 4
+            # nn.BatchNorm2d(fm), ResBlock(fm), # 5
             # nn.BatchNorm2d(fm), ResBlock(fm), # 6
             # nn.BatchNorm2d(fm), ResBlock(fm), # 7
             # nn.BatchNorm2d(fm), ResBlock(fm), # 8
@@ -69,7 +69,7 @@ class PixelCNN(nn.Module):
         self.gout: nn.Module = nn.Conv2d(fm, 4, 1)
         self.bout: nn.Module = nn.Conv2d(fm, 4, 1)
 
-        self.xentropy =  nn.CrossEntropyLoss(reduction='sum')
+        self.xentropy =  nn.CrossEntropyLoss(reduction='mean')
         self.out = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
