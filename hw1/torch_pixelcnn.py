@@ -49,6 +49,7 @@ class ARPixelCNN:
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
             if 0 in xin.shape:
                 continue
+            xin = xin.cuda()
             self.model(xin.float())
             loss = self.model.loss(target=xin.long())
 
@@ -77,8 +78,6 @@ class ARPixelCNN:
         self.model: nn.Module = PixelCNN(fm=self.feature_size)
 
         if torch.cuda.is_available():
-            self.xtrain = self.xtrain.cuda()
-            self.xtest = self.xtest.cuda()
             self.model = self.model.cuda()
             # if torch.cuda.device_count() > 1:
             #     print("Let's use", torch.cuda.device_count(), "GPUs!")
