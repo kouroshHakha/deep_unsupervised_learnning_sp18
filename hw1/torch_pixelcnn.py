@@ -20,7 +20,7 @@ class ARPixelCNN:
                  data_file,
                  *,
                  nepochs=1,
-                 batch_size=128
+                 batch_size=128,
                  ):
         self.file = data_file
         self.nepochs = nepochs
@@ -74,6 +74,9 @@ class ARPixelCNN:
             self.xtrain = self.xtrain.cuda()
             self.xtest = self.xtest.cuda()
             self.model = self.model.cuda()
+            if torch.cuda.device_count() > 1:
+                print("Let's use", torch.cuda.device_count(), "GPUs!")
+                self.model = nn.DataParallel(self.model)
 
         self.opt = optim.Adam(self.model.parameters())
         print('number of model parameters: ',
