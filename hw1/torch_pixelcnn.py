@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.distributions import Categorical
 
-from pixelcnn_model import PixelCNN
+from pixelcnn_model import PixelCNN, PixelCNNParallel
 
 class ARPixelCNN:
 
@@ -76,7 +76,7 @@ class ARPixelCNN:
             self.model = self.model.cuda()
             if torch.cuda.device_count() > 1:
                 print("Let's use", torch.cuda.device_count(), "GPUs!")
-                self.model = nn.DataParallel(self.model)
+                self.model = PixelCNNParallel(self.model)
 
         self.opt = optim.Adam(self.model.parameters())
         print('number of model parameters: ',

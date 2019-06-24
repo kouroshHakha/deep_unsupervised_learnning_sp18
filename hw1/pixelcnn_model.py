@@ -85,6 +85,10 @@ class PixelCNN(nn.Module):
             raise ValueError('You should run the model in forward mode at least once')
         return self.xentropy(self.out, target)
 
+class PixelCNNParallel(nn.DataParallel):
+    def loss(self, target: torch.Tensor) -> torch.Tensor:
+        return self.module.loss(target)
+
 if __name__ == '__main__':
 
     # visualize receptive field
