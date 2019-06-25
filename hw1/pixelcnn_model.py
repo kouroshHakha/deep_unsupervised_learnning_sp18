@@ -96,12 +96,18 @@ if __name__ == '__main__':
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    xin = torch.ones((1, 3, 28, 28), dtype=torch.float)
+    device = torch.device('cuda') if torch.cuda.is_available() else "cpu"
+    xin = torch.ones((128, 3, 28, 28), dtype=torch.float)
     xin.requires_grad_(True)
     model: nn.Module = PixelCNN(128)
     model.eval()
 
+    pdb.set_trace()
+    model = model.to(device)
+    xin = xin.to(device)
+
     out = model(xin)
+    pdb.set_trace()
 
     nsample = 0
     category = 0
