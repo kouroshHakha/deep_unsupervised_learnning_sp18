@@ -92,7 +92,7 @@ class ARPixelCNN:
             s = time.time()
             print(f'epoch {epoch}')
             self.run_epoch('train')
-            self.run_epoch('test')
+            # self.run_epoch('test')
             print(f'training time for epoch {epoch}: {time.time() - s}')
 
 
