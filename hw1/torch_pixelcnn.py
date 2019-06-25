@@ -45,7 +45,7 @@ class ARPixelCNN:
         nsamples = self.xtrain.shape[0]
         b = self.batch_size
         nsteps = 1 if mode == 'test' else nsamples
-        device = torch.device("cuda:0") if mode == 'train' else torch.device("cuda:1")
+        device = torch.device("cuda:0")
         for step in range(nsteps):
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
             if 0 in xin.shape:
