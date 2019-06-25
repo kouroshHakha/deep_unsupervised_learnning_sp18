@@ -49,18 +49,18 @@ class PixelCNN(nn.Module):
         super(PixelCNN, self).__init__()
         self.net = nn.Sequential(
             nn.BatchNorm2d(3), MaskedConv2d('A', 3,  fm, 3, 1, bias=True), nn.LeakyReLU(),
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 1
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 2
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 3
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 4
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 5
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 6
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 7
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 8
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 9
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 10
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 11
-            # nn.BatchNorm2d(fm), ResBlock(fm), # 12
+            nn.BatchNorm2d(fm), ResBlock(fm), # 1
+            nn.BatchNorm2d(fm), ResBlock(fm), # 2
+            nn.BatchNorm2d(fm), ResBlock(fm), # 3
+            nn.BatchNorm2d(fm), ResBlock(fm), # 4
+            nn.BatchNorm2d(fm), ResBlock(fm), # 5
+            nn.BatchNorm2d(fm), ResBlock(fm), # 6
+            nn.BatchNorm2d(fm), ResBlock(fm), # 7
+            nn.BatchNorm2d(fm), ResBlock(fm), # 8
+            nn.BatchNorm2d(fm), ResBlock(fm), # 9
+            nn.BatchNorm2d(fm), ResBlock(fm), # 10
+            nn.BatchNorm2d(fm), ResBlock(fm), # 11
+            nn.BatchNorm2d(fm), ResBlock(fm), # 12
             nn.BatchNorm2d(fm), nn.Conv2d(fm, fm, 1, 1, bias=True), nn.LeakyReLU(),
             nn.BatchNorm2d(fm),
             )
