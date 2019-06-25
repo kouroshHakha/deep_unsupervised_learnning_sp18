@@ -101,8 +101,8 @@ if __name__ == '__main__':
     file = sys.argv[1]
     agent =  ARPixelCNN(file,
                         nepochs=50,
-                        learning_rate=1e-4,
-                        batch_size=32,
-                        feature_size=32,
+                        learning_rate=1e-3,
+                        batch_size=128,
+                        feature_size=128,
                         )
     agent.main()
