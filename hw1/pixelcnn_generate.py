@@ -28,7 +28,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
                 probs = F.softmax(out[:, :, c, i, j], dim=-1).data
                 sample[:, c, i, j] = probs.multinomial(1).float()
 
-    images = sample.numpy().transpose([0, 2, 3, 1])
+    images = sample.cpu().numpy().transpose([0, 2, 3, 1])
     plt.imshow(images[0, 0], cmap='gray')
     plt.savefig(images_path)
     # Saving images row wise
