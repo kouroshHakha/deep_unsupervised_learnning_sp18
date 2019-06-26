@@ -48,7 +48,6 @@ class ARPixelCNN:
         nsamples = data.shape[0]
         b = self.batch_size
         nsteps = 1 if mode == 'test' else nsamples // b
-        print(f'batch_size: {b}')
         epoch_loss = 0
         for step in range(nsteps):
             xin = data[step * b: (step + 1) * b]
@@ -103,15 +102,11 @@ class ARPixelCNN:
             s = time.time()
             print(f'epoch {epoch}')
             self.run_epoch('train', self.xtrain, device)
-            print('memory:', torch.cuda.max_memory_allocated()/1024**3)
-            print('cache:', torch.cuda.max_memory_cached()/1024**3)
-            pdb.set_trace()
-            torch.cuda.reset_max_memory_allocated()
-            torch.cuda.reset_max_memory_cached()
+            print('training memory:', torch.cuda.max_memory_allocated()/1024**3)
+            print('training cache:', torch.cuda.max_memory_cached()/1024**3)
             self.run_epoch('test', self.xtest, device)
-            print('memory:', torch.cuda.max_memory_allocated()/1024**3)
-            print('cache:', torch.cuda.max_memory_cached()/1024**3)
-            pdb.set_trace()
+            print('test memory:', torch.cuda.max_memory_allocated()/1024**3)
+            print('test cache:', torch.cuda.max_memory_cached()/1024**3)
             print(f'training time for epoch {epoch}: {time.time() - s}')
 
 
