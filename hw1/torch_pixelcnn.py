@@ -13,11 +13,11 @@ import torch.optim as optim
 
 from pixelcnn_model import PixelCNN
 
-from utils.logger import TorchLogger
+from logger import TorchLogger
 
 class ARPixelCNN:
 
-    def __init__(self, data_file, save_dir=None, **kwargs):
+    def __init__(self, data_file, save_dir, **kwargs):
 
         self.file = data_file
         self.nepochs = kwargs.get('nepochs', 1)
@@ -30,7 +30,7 @@ class ARPixelCNN:
         self.model = None
         self.opt = None
 
-        self.logger = TorchLogger.from_meta_data(meta_data=kwargs) else TorchLogger(save_dir)
+        self.logger = TorchLogger(save_dir, meta_data=kwargs)
 
     def get_samples(self):
         with open(self.file, 'rb') as f:
@@ -92,37 +92,36 @@ class ARPixelCNN:
         #     self.model = PixelCNNParallel(self.model)
 
         self.opt = optim.Adam(self.model.parameters())
-        print('number of model parameters: ',
-              sum([np.prod(p.size()) for p in self.model.parameters()]))
+        nparams = sum([np.prod(p.size()) for p in self.model.parameters()])
+        self.logger.log(f'number of model parameters: {nparams}')
 
         for epoch in range(self.nepochs):
             s = time.time()
-            print(f'epoch {epoch}')
+            self.logger.log(f'epoch {epoch}')
             self.run_epoch('train', self.xtrain, device)
-            print(f'training memory: {torch.cuda.max_memory_allocated() / 1024 ** 3: 10.2f} GB')
+            self.logger.log(f'training memory: '
+                            f'{torch.cuda.max_memory_allocated() / 1024 ** 3:10.2f} GB', show=False)
             torch.cuda.reset_max_memory_allocated()
             self.run_epoch('test', self.xtest, device)
-            print(f'test memory: {torch.cuda.max_memory_allocated() / 1024 ** 3: 10.2f} GB')
-            print(f'training time for epoch {epoch}: {time.time() - s}')
+            self.logger.log(f'test memory: '
+                            f'{torch.cuda.max_memory_allocated() / 1024 ** 3:10.2f} GB', show=False)
+
+            self.logger.log(f'training time for epoch {epoch}: {time.time() - s}')
 
             # Saving the model
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
             print("Saving Checkpoint!")
-            if (i == epochs - 1):
-                torch.save(net.state_dict(), save_path + '/Model_Checkpoint_' + 'Last' + '.pt')
-            else:
-                torch.save(net.state_dict(), save_path + '/Model_Checkpoint_' + str(i) + '.pt')
+            self.logger.save_model(self.model)
             print('Checkpoint Saved')
 
 
 if __name__ == '__main__':
 
     file = sys.argv[1]
+    save_dir = sys.argv[2]
     agent =  ARPixelCNN(file,
+                        save_dir,
                         nepochs=50,
                         learning_rate=1e-3,
                         batch_size=128,
-                        feature_size=128,
-                        )
+                        feature_size=128)
     agent.main()
