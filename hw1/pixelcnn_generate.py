@@ -29,6 +29,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
                 sample[:, c, i, j] = probs.multinomial(1).float()
 
     images = sample.cpu().numpy().transpose([0, 2, 3, 1])
+    pdb.set_trace()
     plt.imshow(images[0, 0], cmap='gray')
     plt.savefig(images_path)
     # Saving images row wise
