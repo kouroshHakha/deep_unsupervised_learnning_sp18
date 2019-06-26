@@ -41,6 +41,7 @@ class ARPixelCNN:
 
     def run_epoch(self, mode, device):
         s = time.time()
+        self.model.to(device)
         self.model.train(mode == 'train')
         nsamples = self.xtrain.shape[0]
         b = self.batch_size
