@@ -3,9 +3,7 @@ from typing import cast
 import pickle
 import sys
 import time
-import pdb
 import numpy as np
-import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -17,7 +15,7 @@ from logger import TorchLogger
 
 class ARPixelCNN:
 
-    def __init__(self, data_file, save_dir, **kwargs):
+    def __init__(self, data_file, save_directory, **kwargs):
 
         self.file = data_file
         self.nepochs = kwargs.get('nepochs', 1)
@@ -30,7 +28,7 @@ class ARPixelCNN:
         self.model = None
         self.opt = None
 
-        self.logger = TorchLogger(save_dir, meta_data=kwargs)
+        self.logger = TorchLogger(save_directory, meta_data=kwargs)
 
     def get_samples(self):
         with open(self.file, 'rb') as f:

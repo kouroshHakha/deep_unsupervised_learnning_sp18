@@ -3,7 +3,6 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 import pdb
 from pixelcnn_model import PixelCNN
 
@@ -27,7 +26,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
             sample[:, :, i, j] = torch.multinomial(probs, 1).float() / 255.0
 
     # Saving images row wise
-    torchvision.utils.save_image(sample, 'sample.png', nrow=12, padding=0)
+    # torchvision.utils.save_image(sample, 'sample.png', nrow=12, padding=0)
 
 
 if __name__ == '__main__':
