@@ -81,6 +81,7 @@ class ARPixelCNN:
 
         self.model: nn.Module = PixelCNN(fm=self.feature_size)
         self.model = self.model.to(device)
+        pdb.set_trace()
 
         # if torch.cuda.device_count() > 1:
         #     print("Let's use", torch.cuda.device_count(), "GPUs!")
