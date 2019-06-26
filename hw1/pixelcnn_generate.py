@@ -24,7 +24,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
             for j in range(dim):
                 out = model(sample)
                 probs = F.softmax(out[:, :, c, i, j], dim=-1).data
-                sample[:, :, i, j] = probs.multinomial(1).float()
+                sample[:, c, i, j] = probs.multinomial(1).float()
                 pdb.set_trace()
 
 
