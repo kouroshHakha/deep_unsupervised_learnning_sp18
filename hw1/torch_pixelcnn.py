@@ -100,8 +100,8 @@ class ARPixelCNN:
         for epoch in range(self.nepochs):
             s = time.time()
             print(f'epoch {epoch}')
-            # self.run_epoch('train', device)
-            self.run_epoch('test', device)
+            self.run_epoch('train', device)
+            # self.run_epoch('test', device)
             print(f'training time for epoch {epoch}: {time.time() - s}')
 
 
