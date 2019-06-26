@@ -39,16 +39,19 @@ class ARPixelCNN:
         with open(self.file, 'rb') as f:
             return pickle.load(f)
 
-    def run_epoch(self, mode, device):
+    def run_epoch(self, mode, data, device):
         s = time.time()
+
         self.model.to(device)
         self.model.train(mode == 'train')
-        nsamples = self.xtrain.shape[0]
+
+        nsamples = data.shape[0]
         b = self.batch_size
-        nsteps = 1 if mode == 'test' else nsamples
+        nsteps = 1 if mode == 'test' else nsamples // b
         print(f'batch_size: {b}')
+        epoch_loss = 0
         for step in range(nsteps):
-            xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
+            xin = data[step * b: (step + 1) * b]
             if 0 in xin.shape:
                 continue
             xin = xin.float().to(device)
@@ -58,19 +61,18 @@ class ARPixelCNN:
                     self.model(xin)
             else:
                 self.model(xin)
-            pdb.set_trace()
 
             loss = self.model.loss(target=xin.long())
+            epoch_loss += loss.numpy() / nsteps
 
             if mode == 'train':
                 self.opt.zero_grad()
                 loss.backward()
                 self.opt.step()
+                if step % 50 == 0 :
+                    print(f'step {step} -> training loss = {loss.item()}')
 
-            if step % 50 == 0:
-                print(f'step {step} -> training loss = {loss.item()}')
-
-        print(f'{mode} epoch average loss: {loss.item()}, finished in {time.time() - s} secs')
+        print(f'{mode} epoch average loss: {epoch_loss}, finished in {time.time() - s} secs')
 
     def main(self, seed=10):
         np.random.seed(seed)
@@ -100,8 +102,16 @@ class ARPixelCNN:
         for epoch in range(self.nepochs):
             s = time.time()
             print(f'epoch {epoch}')
-            self.run_epoch('train', device)
-            # self.run_epoch('test', device)
+            self.run_epoch('train', self.xtrain, device)
+            print('memory:', torch.cuda.max_memory_allocated()/1024**3)
+            print('cache:', torch.cuda.max_memory_cached()/1024**3)
+            pdb.set_trace()
+            torch.cuda.reset_max_memory_allocated()
+            torch.cuda.reset_max_memory_cached()
+            self.run_epoch('test', self.xtest, device)
+            print('memory:', torch.cuda.max_memory_allocated()/1024**3)
+            print('cache:', torch.cuda.max_memory_cached()/1024**3)
+            pdb.set_trace()
             print(f'training time for epoch {epoch}: {time.time() - s}')
 
 
@@ -111,7 +121,7 @@ if __name__ == '__main__':
     agent =  ARPixelCNN(file,
                         nepochs=50,
                         learning_rate=1e-3,
-                        batch_size=256,
+                        batch_size=128,
                         feature_size=128,
                         )
     agent.main()
