@@ -17,24 +17,20 @@ from utils.logger import TorchLogger
 
 class ARPixelCNN:
 
-    def __init__(self,
-                 data_file,
-                 *,
-                 learning_rate=1e-3,
-                 nepochs=1,
-                 batch_size=128,
-                 feature_size=128,
-                 ):
+    def __init__(self, data_file, save_dir=None, **kwargs):
+
         self.file = data_file
-        self.nepochs = nepochs
-        self.batch_size = batch_size
-        self.feature_size = feature_size
-        self.learning_rate = learning_rate
+        self.nepochs = kwargs.get('nepochs', 1)
+        self.batch_size = kwargs.get('batch_size', 128)
+        self.feature_size = kwargs.get('feature_size', 128)
+        self.learning_rate = kwargs.get('learning_rate', 1e-3)
 
         self.xtrain: torch.Tensor = None
         self.xtest: torch.Tensor = None
         self.model = None
         self.opt = None
+
+        self.logger = TorchLogger.from_meta_data(meta_data=kwargs) else TorchLogger(save_dir)
 
     def get_samples(self):
         with open(self.file, 'rb') as f:
