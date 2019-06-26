@@ -42,6 +42,7 @@ class ARPixelCNN:
     def run_epoch(self, mode, device):
         s = time.time()
         self.model.to(device)
+        pdb.set_trace()
         self.model.train(mode == 'train')
         nsamples = self.xtrain.shape[0]
         b = self.batch_size
@@ -51,7 +52,9 @@ class ARPixelCNN:
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
             if 0 in xin.shape:
                 continue
+            pdb.set_trace()
             xin = xin.to(device)
+            pdb.set_trace()
             self.model(xin.float())
             loss = self.model.loss(target=xin.long())
 
@@ -96,7 +99,6 @@ class ARPixelCNN:
             print(f'epoch {epoch}')
             # self.run_epoch('train', device)
             self.run_epoch('test', device)
-            pdb.set_trace()
             print(f'training time for epoch {epoch}: {time.time() - s}')
 
 
