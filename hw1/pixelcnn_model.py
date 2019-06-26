@@ -93,7 +93,8 @@ class PixelCNN(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         pdb.set_trace()
-        y = self.net(x)
+        # y = self.net(x)
+        y = self.input(x)
         y = self.layer1(y)
         y = self.layer2(y)
         y = self.layer3(y)
