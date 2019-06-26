@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 import torch
-import torch.nn as nn
+import torchvision
 import torch.nn.functional as F
 import pdb
 from pixelcnn_model import PixelCNN
@@ -26,14 +26,14 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
             for c in range(nchannel):
                 out = model(sample)
                 probs = F.softmax(out[:, :, c, i, j], dim=-1).data
-                sample[:, c, i, j] = probs.multinomial(1).float()
+                sample[:, c, i, j] = probs.multinomial(1).float() / 4.0
 
     images = sample.cpu().numpy().transpose([0, 2, 3, 1])
-    pdb.set_trace()
-    plt.imshow(images[0, 0], cmap='gray')
+    plt.imshow(images[0, :, :, 0], cmap='gray', vmin=0, vmax=4)
     plt.savefig(images_path)
+    pdb.set_trace()
     # Saving images row wise
-    # torchvision.utils.save_image(sample, 'sample.png', nrow=12, padding=0)
+    torchvision.utils.save_image(sample, images_path, nrow=12, padding=0)
 
 
 if __name__ == '__main__':
