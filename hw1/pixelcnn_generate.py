@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 def main(ckt_point_path, nsamples=1, feature_size=128):
     path = Path(ckt_point_path)
     images_path = path.parent / 'image.png'
+    images2_path = path.parent / 'image2.png'
     dim = 28
     nchannel = 3
     # Define and load model
@@ -33,7 +34,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     plt.savefig(images_path)
     pdb.set_trace()
     # Saving images row wise
-    torchvision.utils.save_image(sample, images_path, nrow=12, padding=0)
+    torchvision.utils.save_image(sample, images2_path, nrow=12, padding=0)
 
 
 if __name__ == '__main__':
