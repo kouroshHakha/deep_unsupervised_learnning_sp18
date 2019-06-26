@@ -109,3 +109,4 @@ venv.bak/
 # miscellaneous
 *.pkl
 .idea/
+*/data/*
