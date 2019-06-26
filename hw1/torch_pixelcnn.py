@@ -92,7 +92,7 @@ class ARPixelCNN:
         for epoch in range(self.nepochs):
             s = time.time()
             print(f'epoch {epoch}')
-            self.run_epoch('train')
+            # self.run_epoch('train')
             self.run_epoch('test')
             pdb.set_trace()
             print(f'training time for epoch {epoch}: {time.time() - s}')
