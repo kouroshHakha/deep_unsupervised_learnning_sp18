@@ -47,23 +47,42 @@ class PixelCNN(nn.Module):
 
     def __init__(self, fm):
         super(PixelCNN, self).__init__()
-        self.net = nn.Sequential(
-            nn.BatchNorm2d(3), MaskedConv2d('A', 3,  fm, 3, 1, bias=True), nn.LeakyReLU(),
-            nn.BatchNorm2d(fm), ResBlock(fm), # 1
-            nn.BatchNorm2d(fm), ResBlock(fm), # 2
-            nn.BatchNorm2d(fm), ResBlock(fm), # 3
-            nn.BatchNorm2d(fm), ResBlock(fm), # 4
-            nn.BatchNorm2d(fm), ResBlock(fm), # 5
-            nn.BatchNorm2d(fm), ResBlock(fm), # 6
-            nn.BatchNorm2d(fm), ResBlock(fm), # 7
-            nn.BatchNorm2d(fm), ResBlock(fm), # 8
-            nn.BatchNorm2d(fm), ResBlock(fm), # 9
-            nn.BatchNorm2d(fm), ResBlock(fm), # 10
-            nn.BatchNorm2d(fm), ResBlock(fm), # 11
-            nn.BatchNorm2d(fm), ResBlock(fm), # 12
-            nn.BatchNorm2d(fm), nn.Conv2d(fm, fm, 1, 1, bias=True), nn.LeakyReLU(),
-            nn.BatchNorm2d(fm),
-            )
+
+        self.input = nn.Sequential(nn.BatchNorm2d(3), MaskedConv2d('A', 3,  fm, 3, 1, bias=True),
+                                   nn.LeakyReLU())
+        self.layer1 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer2 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer3 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer4 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer5 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer6 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer7 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer8 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer9 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer10 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer11 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.layer12 = nn.Sequential(nn.BatchNorm2d(fm), ResBlock(fm),) # 1
+        self.last = nn.Sequential(nn.BatchNorm2d(fm), nn.Conv2d(fm, fm, 1, 1, bias=True),
+                                  nn.LeakyReLU(),
+                                  nn.BatchNorm2d(fm),) # 1
+
+        # self.net = nn.Sequential(
+        #     nn.BatchNorm2d(3), MaskedConv2d('A', 3,  fm, 3, 1, bias=True), nn.LeakyReLU(),
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 1
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 2
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 3
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 4
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 5
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 6
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 7
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 8
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 9
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 10
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 11
+        #     nn.BatchNorm2d(fm), ResBlock(fm), # 12
+        #     nn.BatchNorm2d(fm), nn.Conv2d(fm, fm, 1, 1, bias=True), nn.LeakyReLU(),
+        #     nn.BatchNorm2d(fm),
+        #     )
 
         self.rout: nn.Module = nn.Conv2d(fm, 4, 1)
         self.gout: nn.Module = nn.Conv2d(fm, 4, 1)
@@ -73,7 +92,21 @@ class PixelCNN(nn.Module):
         self.out = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        pdb.set_trace()
         y = self.net(x)
+        y = self.layer1(y)
+        y = self.layer2(y)
+        y = self.layer3(y)
+        y = self.layer4(y)
+        y = self.layer5(y)
+        y = self.layer6(y)
+        y = self.layer7(y)
+        y = self.layer8(y)
+        y = self.layer9(y)
+        y = self.layer10(y)
+        y = self.layer11(y)
+        y = self.layer12(y)
+        y = self.last(y)
         rout = self.rout(y)[:, :, None, ...]
         gout = self.gout(y)[:, :, None, ...]
         bout = self.bout(y)[:, :, None, ...]

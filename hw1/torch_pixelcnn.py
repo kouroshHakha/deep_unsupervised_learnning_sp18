@@ -42,7 +42,6 @@ class ARPixelCNN:
     def run_epoch(self, mode, device):
         s = time.time()
         self.model.to(device)
-        pdb.set_trace()
         self.model.train(mode == 'train')
         nsamples = self.xtrain.shape[0]
         b = self.batch_size
@@ -52,7 +51,6 @@ class ARPixelCNN:
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
             if 0 in xin.shape:
                 continue
-            pdb.set_trace()
             xin = xin.to(device)
             pdb.set_trace()
             self.model(xin.float())
@@ -84,7 +82,6 @@ class ARPixelCNN:
 
         self.model: nn.Module = PixelCNN(fm=self.feature_size)
         self.model = self.model.to(device)
-        pdb.set_trace()
 
         # if torch.cuda.device_count() > 1:
         #     print("Let's use", torch.cuda.device_count(), "GPUs!")
