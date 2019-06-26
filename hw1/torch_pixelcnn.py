@@ -93,7 +93,8 @@ class ARPixelCNN:
             s = time.time()
             print(f'epoch {epoch}')
             self.run_epoch('train')
-            # self.run_epoch('test')
+            self.run_epoch('test')
+            pdb.set_trace()
             print(f'training time for epoch {epoch}: {time.time() - s}')
 
 
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     agent =  ARPixelCNN(file,
                         nepochs=50,
                         learning_rate=1e-3,
-                        batch_size=100,
+                        batch_size=128,
                         feature_size=128,
                         )
     agent.main()

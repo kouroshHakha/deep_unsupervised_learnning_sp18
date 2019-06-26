@@ -103,8 +103,8 @@ if __name__ == '__main__':
     model.eval()
 
     pdb.set_trace()
-    model = model.to(device)
     xin = xin.to(device)
+    model = model.to(device)
 
     out = model(xin)
     pdb.set_trace()
