@@ -9,6 +9,7 @@ from pixelcnn_model import PixelCNN
 def main(ckt_point_path, nsamples=1, feature_size=128):
     path = Path(ckt_point_path)
     dim = 28
+    nchannel = 3
     # Define and load model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = PixelCNN(feature_size).to(device)
@@ -18,12 +19,14 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     sample = torch.zeros((nsamples, 3, dim, dim)).to(device)
 
     # Generating images pixel by pixel
-    for i in range(dim):
-        for j in range(dim):
-            out = model(sample)
-            pdb.set_trace()
-            probs = F.softmax(out[:, :, i, j], dim=-1).data
-            sample[:, :, i, j] = torch.multinomial(probs, 1).float() / 255.0
+    for c in range(nchannel):
+        for i in range(dim):
+            for j in range(dim):
+                out = model(sample)
+                probs = F.softmax(out[:, :, c, i, j], dim=-1).data
+                sample[:, :, i, j] = probs.multinomial(1).float()
+                pdb.set_trace()
+
 
     # Saving images row wise
     # torchvision.utils.save_image(sample, 'sample.png', nrow=12, padding=0)
