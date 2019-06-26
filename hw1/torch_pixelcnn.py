@@ -63,7 +63,7 @@ class ARPixelCNN:
                 self.model(xin)
 
             loss = self.model.loss(target=xin.long())
-            epoch_loss += loss.numpy() / nsteps
+            epoch_loss += loss.item() / nsteps
 
             if mode == 'train':
                 self.opt.zero_grad()
