@@ -8,12 +8,12 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-class Logger(abc.ABCMeta):
+class Logger(metaclass=abc.ABCMeta):
     """
     Abstract class for logging
     """
 
-    def __int__(self, directory: str, meta_data: Dict[str, Any] = None) -> None:
+    def __init__(self, directory: str, meta_data: Dict[str, Any] = None) -> None:
 
         path = Path(directory)
         if path.exists() and not path.is_dir():
@@ -21,10 +21,12 @@ class Logger(abc.ABCMeta):
 
         if meta_data:
             self._path = path / self._get_name(meta_data)
+            self._path.mkdir(parents=True, exist_ok=True)
             self.write_yaml('meta', meta_data)
         else:
             self._path = path
-        Path.mkdir(self._path, exist_ok=True)
+            self._path.mkdir(parents=True, exist_ok=True)
+
 
         self._log_text_path = self._path / 'log.txt'
         self._model_index = 0
@@ -38,7 +40,7 @@ class Logger(abc.ABCMeta):
         if log:
             self.log(statement, show=False)
 
-    def log(self, statement: str, *, show=False) -> None:
+    def log(self, statement: str, *, show=True) -> None:
         if show:
             print(statement)
         with self._log_text_path.open('w+') as f:
@@ -46,7 +48,7 @@ class Logger(abc.ABCMeta):
 
     def write_yaml(self, name: str, data_dict: Dict[str, Any]) -> None:
         path = self._path / f'{name}.yaml'
-        with path.open('wb') as f:
+        with path.open('w') as f:
             yaml.dump(data_dict, f)
 
     def _get_name(self, meta_data: Dict[str, Any]) -> str:
@@ -54,7 +56,7 @@ class Logger(abc.ABCMeta):
 
 
 class TorchLogger(Logger):
-    def __int__(self, directory: str, meta_data: Dict[str, Any] = None) -> None:
+    def __init__(self, directory: str, meta_data: Dict[str, Any] = None) -> None:
         Logger.__init__(self, directory, meta_data)
 
     def save_model(self, model: nn.Module):
