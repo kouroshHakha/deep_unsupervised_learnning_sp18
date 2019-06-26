@@ -39,13 +39,12 @@ class ARPixelCNN:
         with open(self.file, 'rb') as f:
             return pickle.load(f)
 
-    def run_epoch(self, mode):
+    def run_epoch(self, mode, device):
         s = time.time()
         self.model.train(mode == 'train')
         nsamples = self.xtrain.shape[0]
         b = self.batch_size
         nsteps = 1 if mode == 'test' else nsamples
-        device = torch.device("cuda:1")
         print(f'batch_size: {b}')
         for step in range(nsteps):
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
@@ -77,13 +76,14 @@ class ARPixelCNN:
         self.xtrain = torch.from_numpy(dtrain)
         self.xtest = torch.from_numpy(dtest)
 
-        self.model: nn.Module = PixelCNN(fm=self.feature_size)
+        device = torch.device('cuda') if torch.cuda.is_available() else "cpu"
 
-        if torch.cuda.is_available():
-            self.model = self.model.cuda()
-            # if torch.cuda.device_count() > 1:
-            #     print("Let's use", torch.cuda.device_count(), "GPUs!")
-            #     self.model = PixelCNNParallel(self.model)
+        self.model: nn.Module = PixelCNN(fm=self.feature_size)
+        self.model = self.model.to(device)
+
+        # if torch.cuda.device_count() > 1:
+        #     print("Let's use", torch.cuda.device_count(), "GPUs!")
+        #     self.model = PixelCNNParallel(self.model)
 
         self.opt = optim.Adam(self.model.parameters())
         print('number of model parameters: ',
@@ -92,8 +92,8 @@ class ARPixelCNN:
         for epoch in range(self.nepochs):
             s = time.time()
             print(f'epoch {epoch}')
-            # self.run_epoch('train')
-            self.run_epoch('test')
+            # self.run_epoch('train', device)
+            self.run_epoch('test', device)
             pdb.set_trace()
             print(f'training time for epoch {epoch}: {time.time() - s}')
 
