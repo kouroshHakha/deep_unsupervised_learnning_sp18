@@ -51,7 +51,7 @@ class ARPixelCNN:
             xin = self.xtest if mode == 'test' else self.xtrain[step * b: (step + 1) * b]
             if 0 in xin.shape:
                 continue
-            xin = xin.to(device)
+            xin = xin.float().to(device)
             self.model(xin.float())
             loss = self.model.loss(target=xin.long())
 
