@@ -52,7 +52,6 @@ class ARPixelCNN:
             if 0 in xin.shape:
                 continue
             xin = xin.to(device)
-            pdb.set_trace()
             self.model(xin.float())
             loss = self.model.loss(target=xin.long())
 
