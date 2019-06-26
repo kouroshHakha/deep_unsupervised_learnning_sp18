@@ -52,7 +52,13 @@ class ARPixelCNN:
             if 0 in xin.shape:
                 continue
             xin = xin.float().to(device)
-            self.model(xin.float())
+
+            if mode == 'test':
+                with torch.no_grad():
+                    self.model(xin)
+            else:
+                self.model(xin)
+
             loss = self.model.loss(target=xin.long())
 
             if mode == 'train':
