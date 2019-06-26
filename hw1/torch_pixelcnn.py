@@ -10,9 +10,10 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.distributions import Categorical
 
-from pixelcnn_model import PixelCNN, PixelCNNParallel
+from pixelcnn_model import PixelCNN
+
+from utils.logger import TorchLogger
 
 class ARPixelCNN:
 
@@ -102,12 +103,21 @@ class ARPixelCNN:
             s = time.time()
             print(f'epoch {epoch}')
             self.run_epoch('train', self.xtrain, device)
-            print('training memory:', torch.cuda.max_memory_allocated()/1024**3)
-            print('training cache:', torch.cuda.max_memory_cached()/1024**3)
+            print(f'training memory: {torch.cuda.max_memory_allocated() / 1024 ** 3: 10.2f} GB')
+            torch.cuda.reset_max_memory_allocated()
             self.run_epoch('test', self.xtest, device)
-            print('test memory:', torch.cuda.max_memory_allocated()/1024**3)
-            print('test cache:', torch.cuda.max_memory_cached()/1024**3)
+            print(f'test memory: {torch.cuda.max_memory_allocated() / 1024 ** 3: 10.2f} GB')
             print(f'training time for epoch {epoch}: {time.time() - s}')
+
+            # Saving the model
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            print("Saving Checkpoint!")
+            if (i == epochs - 1):
+                torch.save(net.state_dict(), save_path + '/Model_Checkpoint_' + 'Last' + '.pt')
+            else:
+                torch.save(net.state_dict(), save_path + '/Model_Checkpoint_' + str(i) + '.pt')
+            print('Checkpoint Saved')
 
 
 if __name__ == '__main__':
