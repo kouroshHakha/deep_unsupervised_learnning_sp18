@@ -58,6 +58,7 @@ class ARPixelCNN:
                     self.model(xin)
             else:
                 self.model(xin)
+            pdb.set_trace()
 
             loss = self.model.loss(target=xin.long())
 
