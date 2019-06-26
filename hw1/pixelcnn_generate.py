@@ -19,9 +19,9 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     sample = torch.zeros((nsamples, 3, dim, dim)).to(device)
 
     # Generating images pixel by pixel
-    for c in range(nchannel):
-        for i in range(dim):
-            for j in range(dim):
+    for i in range(dim):
+        for j in range(dim):
+            for c in range(nchannel):
                 out = model(sample)
                 probs = F.softmax(out[:, :, c, i, j], dim=-1).data
                 sample[:, c, i, j] = probs.multinomial(1).float()
