@@ -97,17 +97,15 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
 
     device = torch.device('cuda') if torch.cuda.is_available() else "cpu"
-    xin = torch.ones((128, 3, 28, 28), dtype=torch.float)
+    xin = torch.ones((1, 3, 28, 28), dtype=torch.float)
     xin.requires_grad_(True)
     model: nn.Module = PixelCNN(128)
     model.eval()
 
-    pdb.set_trace()
     xin = xin.to(device)
     model = model.to(device)
 
     out = model(xin)
-    pdb.set_trace()
 
     nsample = 0
     category = 0
@@ -117,7 +115,9 @@ if __name__ == '__main__':
     output_target = (nsample, category, out_channel, ) + position
     out[output_target].backward()
     grad = xin.grad[nsample, in_channel].numpy()
-    grad[grad != 0] = 1
+    # grad[grad != 0] = 1
+    grad = np.abs(grad)
+    grad /= np.max(grad)
     plt.imshow(grad, cmap='gray', vmin=0, vmax=1)
     plt.show()
 
