@@ -31,6 +31,7 @@ def save_image(tensor, filename, nrow=8, padding=2,
 def main(ckt_point_path, nsamples=1, feature_size=128):
     path = Path(ckt_point_path)
     images_directory = Path('images')
+    images_directory.mkdir(parents=True, exist_ok=True)
     dim = 28
     nchannel = 3
     # Define and load model
