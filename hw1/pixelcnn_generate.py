@@ -81,7 +81,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
 
     sample = sample.float() / 4.0
     # Saving images row wise
-    save_image(sample, images_directory / 'gen_ckpt10.png', nrow=5, padding=0)
+    save_image(sample, images_directory / 'gen_ckpt49.png', nrow=5, padding=0)
 
 
 if __name__ == '__main__':
