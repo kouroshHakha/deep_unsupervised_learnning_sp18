@@ -41,46 +41,47 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     model.load_state_dict(torch.load(path))
     model.eval()
 
-    # visualize receptive field
-    seed = 20
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-
-    device = torch.device('cuda') if torch.cuda.is_available() else "cpu"
-    xin = torch.ones((1, 3, 28, 28), dtype=torch.float, device=device)
-    xin.requires_grad_(True)
-    model.eval()
-
-    model = model.to(device)
-
-    out = model(xin)
-
-    nsample = 0
-    category = 0
-    in_channel = 0
-    out_channel = 0
-    position = (25, 27)
-    output_target = (nsample, category, out_channel, ) + position
-    out[output_target].backward()
-    grad = xin.grad[nsample, in_channel].cpu().numpy()
-    # grad[grad != 0] = 1
-    grad = np.abs(grad)
-    grad /= np.max(grad)
-    plt.imshow(grad, cmap='gray', vmin=0, vmax=1)
-    plt.savefig(images_directory / 'recf49_25_27.png')
-
-    # sample = torch.zeros((nsamples, 3, dim, dim)).to(device)
+    # # visualize receptive field
+    # seed = 20
+    # np.random.seed(seed)
+    # torch.manual_seed(seed)
     #
-    # # Generating images pixel by pixel
-    # for i in range(dim):
-    #     for j in range(dim):
-    #         for c in range(nchannel):
-    #             out = model(sample)
-    #             probs = F.softmax(out[:, :, c, i, j], dim=-1).data
-    #             sample[:, c, i, j] = torch.squeeze(probs.multinomial(1).float() / 4.0)
+    # device = torch.device('cuda') if torch.cuda.is_available() else "cpu"
+    # xin = torch.ones((1, 3, 28, 28), dtype=torch.float, device=device)
+    # xin.requires_grad_(True)
+    # model.eval()
     #
-    # # Saving images row wise
-    # save_image(sample, images_directory / 'gen_ckpt5.png', nrow=5, padding=0)
+    # model = model.to(device)
+    #
+    # out = model(xin)
+    #
+    # nsample = 0
+    # category = 0
+    # in_channel = 0
+    # out_channel = 0
+    # position = (25, 27)
+    # output_target = (nsample, category, out_channel, ) + position
+    # out[output_target].backward()
+    # grad = xin.grad[nsample, in_channel].cpu().numpy()
+    # # grad[grad != 0] = 1
+    # grad = np.abs(grad)
+    # grad /= np.max(grad)
+    # plt.imshow(grad, cmap='gray', vmin=0, vmax=1)
+    # plt.savefig(images_directory / 'recf49_25_27.png')
+
+    sample = torch.zeros((nsamples, 3, dim, dim)).to(device)
+
+    # Generating images pixel by pixel
+    for i in range(dim):
+        for j in range(dim):
+            for c in range(nchannel):
+                out = model(sample)
+                probs = F.softmax(out[:, :, c, i, j], dim=-1).data
+                pdb.set_trace()
+                sample[:, c, i, j] = torch.squeeze(probs.multinomial(1).float() / 4.0)
+
+    # Saving images row wise
+    save_image(sample, images_directory / 'gen_ckpt10.png', nrow=5, padding=0)
 
 
 if __name__ == '__main__':
