@@ -23,8 +23,8 @@ class ARPixelCNN:
         self.feature_size = kwargs.get('feature_size', 128)
         self.learning_rate = kwargs.get('learning_rate', 1e-3)
 
-        self.xtrain: torch.Tensor = None
-        self.xtest: torch.Tensor = None
+        self.xtrain = None
+        self.xtest = None
         self.model = None
         self.opt = None
 
