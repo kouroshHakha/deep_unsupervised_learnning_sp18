@@ -110,4 +110,4 @@ venv.bak/
 *.pkl
 .idea/
 */data/*
-*/images/*
+*/images*
