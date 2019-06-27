@@ -47,12 +47,11 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     torch.manual_seed(seed)
 
     device = torch.device('cuda') if torch.cuda.is_available() else "cpu"
-    xin = torch.ones((1, 3, 28, 28), dtype=torch.float)
+    xin = torch.ones((1, 3, 28, 28), dtype=torch.float, device=device)
     xin.requires_grad_(True)
     model: nn.Module = PixelCNN(128)
     model.eval()
 
-    xin = xin.to(device)
     model = model.to(device)
 
     out = model(xin)
