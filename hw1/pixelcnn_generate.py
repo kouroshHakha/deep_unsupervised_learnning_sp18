@@ -52,8 +52,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
 
     pdb.set_trace()
     # Saving images row wise
-    torchvision.utils.save_image(sample,
-                                 images_directory / 'gen_25.png', nrow=5, padding=0)
+    save_image(sample, images_directory / 'gen_25.png', nrow=5, padding=0)
 
 
 if __name__ == '__main__':
