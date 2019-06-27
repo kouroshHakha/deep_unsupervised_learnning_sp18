@@ -68,7 +68,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     grad = np.abs(grad)
     grad /= np.max(grad)
     plt.imshow(grad, cmap='gray', vmin=0, vmax=1)
-    plt.savefig(images_directory / 'recf0.png')
+    plt.savefig(images_directory / 'recf10.png')
 
     # sample = torch.zeros((nsamples, 3, dim, dim)).to(device)
     #
