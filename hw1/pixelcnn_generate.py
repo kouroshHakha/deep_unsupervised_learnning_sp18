@@ -59,7 +59,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     category = 0
     in_channel = 0
     out_channel = 0
-    position = (14, 14)
+    position = (25, 27)
     output_target = (nsample, category, out_channel, ) + position
     out[output_target].backward()
     grad = xin.grad[nsample, in_channel].cpu().numpy()
@@ -67,7 +67,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     grad = np.abs(grad)
     grad /= np.max(grad)
     plt.imshow(grad, cmap='gray', vmin=0, vmax=1)
-    plt.savefig(images_directory / 'recf49.png')
+    plt.savefig(images_directory / 'recf49_25_27.png')
 
     # sample = torch.zeros((nsamples, 3, dim, dim)).to(device)
     #

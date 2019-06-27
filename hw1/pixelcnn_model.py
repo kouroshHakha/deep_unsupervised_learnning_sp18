@@ -111,7 +111,7 @@ if __name__ == '__main__':
     category = 0
     in_channel = 0
     out_channel = 0
-    position = (14, 14)
+    position = (25, 27)
     output_target = (nsample, category, out_channel, ) + position
     out[output_target].backward()
     grad = xin.grad[nsample, in_channel].numpy()
