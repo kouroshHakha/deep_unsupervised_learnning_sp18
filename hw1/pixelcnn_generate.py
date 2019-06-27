@@ -48,7 +48,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
             for c in range(nchannel):
                 out = model(sample)
                 probs = F.softmax(out[:, :, c, i, j], dim=-1).data
-                sample[:, c, i, j] = probs.multinomial(1).float() / 4.0
+                sample[:, c, i, j] = torch.squeeze(probs.multinomial(1).float() / 4.0)
 
     pdb.set_trace()
     # Saving images row wise
