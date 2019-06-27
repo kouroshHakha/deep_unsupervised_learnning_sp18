@@ -63,7 +63,7 @@ def main(ckt_point_path, nsamples=1, feature_size=128):
     position = (14, 14)
     output_target = (nsample, category, out_channel, ) + position
     out[output_target].backward()
-    grad = xin.grad[nsample, in_channel].numpy()
+    grad = xin.grad[nsample, in_channel].cpu().numpy()
     # grad[grad != 0] = 1
     grad = np.abs(grad)
     grad /= np.max(grad)
