@@ -10,3 +10,6 @@
 [submodule "hw1/pixelcnn-pytorch2"]
 	path = hw1/pixelcnn-pytorch2
 	url = https://github.com/jzbontar/pixelcnn-pytorch.git
+[submodule "hw2/git_rnvp"]
+	path = hw2/git_rnvp
+	url = https://github.com/chrischute/real-nvp.git
