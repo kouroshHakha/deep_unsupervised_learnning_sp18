@@ -31,6 +31,9 @@ class Logger(metaclass=abc.ABCMeta):
         self._log_text_path = self._path / 'log.txt'
         self._model_index = 0
 
+        with self._log_text_path.open('w') as f:
+            pass
+
     @abc.abstractmethod
     def save_model(self, model: Any) -> None:
         raise NotImplemented
@@ -43,8 +46,8 @@ class Logger(metaclass=abc.ABCMeta):
     def log(self, statement: str, *, show=True) -> None:
         if show:
             print(statement)
-        with self._log_text_path.open('w+') as f:
-            f.write(statement)
+        with open(self._log_text_path, 'a') as f:
+            f.write(statement + '\n')
 
     def write_yaml(self, name: str, data_dict: Dict[str, Any]) -> None:
         path = self._path / f'{name}.yaml'

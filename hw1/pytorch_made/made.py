@@ -25,7 +25,8 @@ class MaskedLinear(nn.Linear):
         return F.linear(input, self.mask * self.weight, self.bias)
 
 class MADE(nn.Module):
-    def __init__(self, nin, hidden_sizes, nout, num_masks=1, natural_ordering=False, seed=0):
+    def __init__(self, nin, hidden_sizes, nout, num_masks=1, natural_ordering=False, seed=0,
+                 bias_init = 0.01):
         """
         nin: integer; number of inputs
         hidden sizes: a list of integers; number of units in hidden layers
@@ -42,6 +43,7 @@ class MADE(nn.Module):
         self.nin = nin
         self.nout = nout
         self.hidden_sizes = hidden_sizes
+        self.bias_init = bias_init
         assert self.nout % self.nin == 0, "nout must be integer multiple of nin"
         
         # define a simple MLP neural net
@@ -70,7 +72,7 @@ class MADE(nn.Module):
     def init_weights(self, m):
         if isinstance(m, nn.Linear):
             nn.init.xavier_normal_(m.weight, gain=10)
-            m.bias.data.fill_(0.01)
+            m.bias.data.fill_(self.bias_init)
 
     def update_masks(self, force_natural_ordering=False):
         if self.m and self.num_masks == 1 and self.natural_ordering: return
@@ -126,7 +128,7 @@ if __name__ == '__main__':
         # (D, [200, 220], D, True),          # natural ordering test
         # (D, [200, 220], 2*D, True),       # test nout > nin
         # (D, [20, 20], 200*D, True),       # test nout > nin
-        (D, [20, 20], 20*D, False)
+        (D, [20, 20], 15*D, True)
     ]
     
     for nin, hiddens, nout, natural_ordering in configs:
