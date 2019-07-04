@@ -42,7 +42,7 @@ class CouplingLayer1D(nn.Module):
 
     def forward(self, x, sldj=None, reverse=False):
         if sldj is None:
-            sldj = torch.zeros((x.shape[0],))
+            sldj = torch.zeros((x.shape[0],), device=x.device)
 
         if isinstance(sldj, str):
             pdb.set_trace()
