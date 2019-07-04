@@ -62,11 +62,10 @@ class Agent:
         )
         self.logger = TorchLogger('data', meta_data)
 
-    def run_epoch(self, data, mode='train'):
+    def run_epoch(self, data, device, mode='train'):
         self.model.train(mode == 'train')
         ndata, nin = data.shape
         b = self.batch_size
-        device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
         nsteps = ndata // b
         for step in range(nsteps):
             xbatch = data[step: (step + 1) * b].to(device)
@@ -96,15 +95,16 @@ class Agent:
         train_x, test_x, train_y, test_y = divide_ds(data_x, data_y, 0.8)
         train_x = torch.from_numpy(train_x).float()
         test_x = torch.from_numpy(test_x).float()
-
+        device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
         self.model: nn.Module = realNVP(self.hidden_layers, self.n_layers)
+        self.model.to(device)
         self.optimizer = optim.Adam(self.model.parameters())
 
         self.model.train(True)
         for epoch in range(10):
             self.logger.log(f'epoch = {epoch}')
-            self.run_epoch(train_x, mode='train')
-            self.run_epoch(test_x, mode='test')
+            self.run_epoch(train_x, device, mode='train')
+            self.run_epoch(test_x, device, mode='test')
             self.logger.save_model(self.model)
 
 
