@@ -38,7 +38,7 @@ class Logger(metaclass=abc.ABCMeta):
     def save_model(self, model: Any) -> None:
         raise NotImplemented
 
-    def print(self, statement: str, *, log=True) -> None:
+    def print(self, statement: str, *, log=False) -> None:
         print(statement)
         if log:
             self.log(statement, show=False)

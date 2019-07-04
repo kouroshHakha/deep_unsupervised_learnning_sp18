@@ -148,6 +148,6 @@ def show_latent(k, fpath):
         pdb.set_trace()
 
 if __name__ == '__main__':
-    # run_main(k=5, batch_size=512)
+    run_main(k=5, batch_size=32)
     # show_density(k=5, fpath=sys.argv[1])
-    show_latent(k=5, fpath=sys.argv[1])
+    # show_latent(k=5, fpath=sys.argv[1])
