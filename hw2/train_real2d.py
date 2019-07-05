@@ -43,6 +43,7 @@ def sample_data():
 class Agent:
 
     def __init__(self,
+                 nepochs=10,
                  batch_size=32,
                  hidden_layers=(40, 40, 40),
                  n_layers = 4,
@@ -51,6 +52,7 @@ class Agent:
         self.batch_size = batch_size
         self.hidden_layers = list(hidden_layers)
         self.n_layers = n_layers
+        self.nepochs = nepochs
 
         self.optimizer = None
         self.model = None
@@ -68,20 +70,22 @@ class Agent:
         b = self.batch_size
         nsteps = ndata // b
         for step in range(nsteps):
-            xbatch = data[step: (step + 1) * b].to(device)
+            xbatch = data[step * b:(step + 1) * b].to(device)
             z, ll = self.model(xbatch)
             nll = -torch.mean(ll, dim=-1)
             if mode == 'train':
                 self.optimizer.zero_grad()
                 nll.backward()
-                foo = list(self.model.children())[0]
-                foo = list(foo.children())[0]
-                foo = list(foo.children())[0]
-                foo = list(foo.children())[0]
-                weight = list(foo.children())[0].weight
-                if torch.isnan(weight.grad[0,0]):
-                    pdb.set_trace()
-                # clip_grad_norm(self.optimizer, max_norm=100)
+                # foo = list(self.model.children())[0]
+                # foo = list(foo.children())[0]
+                # foo = list(foo.children())[0]
+                # foo = list(foo.children())[0]
+                # weight = list(foo.children())[0].weight
+                # if torch.isnan(weight.grad[0,0]):
+                #     pdb.set_trace()
+                #     self.model(xbatch, stop=True)
+                #     pdb.set_trace()
+                clip_grad_norm(self.optimizer, max_norm=100)
                 self.optimizer.step()
 
             if step % 100 == 0 and mode == 'train':
@@ -101,7 +105,7 @@ class Agent:
         self.optimizer = optim.Adam(self.model.parameters())
 
         self.model.train(True)
-        for epoch in range(10):
+        for epoch in range(self.nepochs):
             self.logger.log(f'epoch = {epoch}')
             self.run_epoch(train_x, device, mode='train')
             self.run_epoch(test_x, device, mode='test')
@@ -110,5 +114,10 @@ class Agent:
 
 if __name__ == '__main__':
 
-    agent = Agent()
+    agent = Agent(
+        nepochs=10,
+        batch_size=128,
+        hidden_layers=[40, 40, 40],
+        n_layers=5
+    )
     agent.run_main()
