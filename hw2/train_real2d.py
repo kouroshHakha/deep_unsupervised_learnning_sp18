@@ -115,9 +115,9 @@ class Agent:
 if __name__ == '__main__':
 
     agent = Agent(
-        nepochs=10,
+        nepochs=50,
         batch_size=128,
-        hidden_layers=[40, 40, 40],
-        n_layers=5
+        hidden_layers=[100, 100, 100],
+        n_layers=10,
     )
     agent.run_main()
