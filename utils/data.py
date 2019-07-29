@@ -1,8 +1,9 @@
+from typing import Optional
 import numpy as np
 
 
-def divide_ds(data: np.ndarray, label: np.ndarray = None,
-                           train_per: float = 0.8):
+def divide_ds(data: np.ndarray, label: Optional[np.ndarray] = None,
+              train_per: float = 0.8):
 
 
     index = int(len(data) * train_per)

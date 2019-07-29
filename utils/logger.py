@@ -57,6 +57,10 @@ class Logger(metaclass=abc.ABCMeta):
     def _get_name(self, meta_data: Dict[str, Any]) -> str:
         return time.strftime("%Y_%m_%d_%H_%M_%S")
 
+    @property
+    def path(self):
+        return self._path
+
 
 class TorchLogger(Logger):
     def __init__(self, directory: str, meta_data: Dict[str, Any] = None) -> None:

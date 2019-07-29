@@ -8,6 +8,11 @@ from utils.data import divide_ds
 from hw1.pytorch_made.made import MADE
 from utils.logger import TorchLogger
 
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.colors import BoundaryNorm
+from matplotlib.ticker import MaxNLocator
+
 import pdb
 import os
 import sys
@@ -76,7 +81,7 @@ def run_epoch(model, optimizer, data,
     device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
     nsteps = ndata // b
     for step in range(nsteps):
-        xbatch = data[step: (step + 1) * b].to(device)
+        xbatch = data[step * b: (step + 1) * b].to(device)
         _, ll, _ = model(xbatch)
 
         nll = -torch.mean(ll, dim=-1)
@@ -88,10 +93,9 @@ def run_epoch(model, optimizer, data,
         if step % 100 == 0 and mode == 'train':
             print(f'[train] neg_ll = {nll}')
 
-    print(f'[{mode}] epoch finished nll = {nll}')
     logger.log(f'[{mode}] epoch finished nll = {nll}')
 
-def run_main(k=5, batch_size=32):
+def run_main(k=5, batch_size=32, hidden_layers=None):
     data_x, data_y = sample_data()
 
     train_x, test_x, train_y, test_y = divide_ds(data_x, data_y, 0.8)
@@ -100,7 +104,7 @@ def run_main(k=5, batch_size=32):
 
     ndata, nin = train_x.shape
     nout = 3 * k * nin
-    model: nn.Module = Model(nin, [20, 20, 20], nout, natural_ordering=True, bias_init=1.0)
+    model: nn.Module = Model(nin, hidden_layers, nout, natural_ordering=True, bias_init=1.0)
     optimizer = optim.Adam(model.parameters())
 
     model.train(True)
@@ -111,19 +115,42 @@ def run_main(k=5, batch_size=32):
         logger.save_model(model)
 
 
-def show_density(k, fpath):
+def show_model_density(k, fpath, hidden_layers):
 
     nin = 2
     nout = 3 * k * nin
-    model: nn.Module = Model(nin, [20, 20, 20], nout, natural_ordering=True, bias_init=1.0)
+    model: nn.Module = Model(nin, hidden_layers, nout, natural_ordering=True, bias_init=1.0)
     model.load_state_dict(torch.load(fpath))
 
-    num = 100
+    num = 16
     x = np.linspace(-4, 4, num)
-    x_array = np.transpose([np.tile(x, len(x)), np.repeat(x, len(x))])
-    _, y_arr, _ = model(torch.from_numpy(x_array))
+    x0, x1 = np.meshgrid(x, x)
+    # x_array = np.transpose([np.tile(x, len(x)), np.repeat(x, len(x))])
+    x_array = np.array([[x0[i, j], x1[i, j]] for i in range(num) for j in range(num)])
+    _ , y_arr, _ = model(torch.from_numpy(x_array))
     y_arr = torch.detach(y_arr.to('cpu')).numpy()
-    pdb.set_trace()
+    y_arr = np.reshape(y_arr, (num, num))
+    y_arr = np.exp(y_arr)
+
+    fig = plt.figure(2)
+    ax = fig.gca()
+    ax.imshow(y_arr, interpolation='gaussian', origin='low',
+              extent=[x0.min(), x0.max(), x1.min(), x1.max()])
+    plt.show()
+
+def show_real_density():
+    data_x, data_y = sample_data()
+
+    x0 = data_x[:, 0]
+    x1 = data_x[:, 1]
+
+    z, x0_edges, x1_edges = np.histogram2d(x0, x1, bins=100, range=[[-4, 4], [-4, 4]],
+                                           density=True)
+    z = z.T
+    fig = plt.figure(1)
+    ax = fig.gca()
+    ax.imshow(z, interpolation='gaussian', origin='low',
+              extent=[x0_edges[0], x0_edges[-1], x1_edges[0], x1_edges[-1]])
 
 def show_latent(k, fpath):
 
@@ -148,6 +175,7 @@ def show_latent(k, fpath):
         pdb.set_trace()
 
 if __name__ == '__main__':
-    run_main(k=5, batch_size=32)
-    # show_density(k=5, fpath=sys.argv[1])
+    # run_main(k=50, batch_size=128, hidden_layers=[100, 100, 100, 100])
+    show_model_density(k=50, fpath=sys.argv[1], hidden_layers=[100, 100, 100, 100])
+    # show_real_density()
     # show_latent(k=5, fpath=sys.argv[1])

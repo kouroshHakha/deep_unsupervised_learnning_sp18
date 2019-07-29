@@ -9,6 +9,11 @@ from utils.data import divide_ds
 from utils.logger import TorchLogger
 
 from realnvp2d import realNVP
+import yaml
+import matplotlib.pyplot as plt
+import sys
+from pathlib import Path
+from scipy.interpolate import griddata
 import pdb
 
 torch.random.manual_seed(10)
@@ -26,7 +31,7 @@ def clip_grad_norm(optimizer, max_norm, norm_type=2):
         utils.clip_grad_norm_(group['params'], max_norm, norm_type)
 
 def sample_data():
-    count = 100000
+    count = 10000
     rand = np.random.RandomState(0)
     a: np.ndarray = [[-1.5, 2.5]] + rand.randn(count // 3, 2) * 0.2
     b: np.ndarray = [[1.5, 2.5]] + rand.randn(count // 3, 2) * 0.2
@@ -47,6 +52,7 @@ class Agent:
                  batch_size=32,
                  hidden_layers=(40, 40, 40),
                  n_layers = 4,
+                 loaded = False,
                  ):
 
         self.batch_size = batch_size
@@ -58,11 +64,19 @@ class Agent:
         self.model = None
 
         meta_data = dict(
+            nepochs=nepochs,
             batch_size=batch_size,
             hidden_layers=hidden_layers,
             n_layers=n_layers,
         )
-        self.logger = TorchLogger('data', meta_data)
+        if not loaded:
+            self.logger = TorchLogger('data', meta_data)
+
+    @classmethod
+    def from_meta_file(cls, file):
+        with open(file, 'r') as f:
+            meta_data = yaml.load(f)
+        return Agent(nepochs=1, **meta_data, loaded=True)
 
     def run_epoch(self, data, device, mode='train'):
         self.model.train(mode == 'train')
@@ -70,21 +84,12 @@ class Agent:
         b = self.batch_size
         nsteps = ndata // b
         for step in range(nsteps):
-            xbatch = data[step * b:(step + 1) * b].to(device)
+            xbatch = data[step * b: (step + 1) * b].to(device)
             z, ll = self.model(xbatch)
             nll = -torch.mean(ll, dim=-1)
             if mode == 'train':
                 self.optimizer.zero_grad()
                 nll.backward()
-                # foo = list(self.model.children())[0]
-                # foo = list(foo.children())[0]
-                # foo = list(foo.children())[0]
-                # foo = list(foo.children())[0]
-                # weight = list(foo.children())[0].weight
-                # if torch.isnan(weight.grad[0,0]):
-                #     pdb.set_trace()
-                #     self.model(xbatch, stop=True)
-                #     pdb.set_trace()
                 clip_grad_norm(self.optimizer, max_norm=100)
                 self.optimizer.step()
 
@@ -111,13 +116,62 @@ class Agent:
             self.run_epoch(test_x, device, mode='test')
             self.logger.save_model(self.model)
 
+    def show_model_density(self, xrange, num=16, checkpoint_fname=None):
+
+        device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+        self.model: nn.Module = realNVP(self.hidden_layers, self.n_layers)
+        self.model.load_state_dict(torch.load(checkpoint_fname, map_location=device))
+        self.model.to(device)
+        self.model.eval()
+
+        x = np.linspace(xrange[0], xrange[1], num)
+        x0, x1 = np.meshgrid(x, x)
+        data_x = np.array([[x0[i, j], x1[i, j]] for i in range(num) for j in range(num)])
+        x_array = torch.from_numpy(data_x).float()
+        z, y_arr = self.model(x_array.to(device))
+        y_arr = torch.detach(y_arr.to('cpu')).numpy()
+        y_arr = np.exp(y_arr)
+        y_arr = griddata(data_x, y_arr, (x0, x1), method='nearest')
+        fig = plt.figure(2)
+        ax = fig.gca()
+        ax.imshow(y_arr, interpolation='gaussian', origin='low',
+                  extent=[x0.min(), x0.max(), x1.min(), x1.max()])
+
+        plt.show()
+
+    def show_model_latent(self):
+
+        device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+        self.model: nn.Module = realNVP(self.hidden_layers, self.n_layers)
+        self.model.load_state_dict(torch.load(checkpoint_fname, map_location=device))
+        self.model.to(device)
+        self.model.eval()
+
+        data_x, data_y = sample_data()
+        x_array = torch.from_numpy(data_x).float()
+        z, _ = self.model(x_array.to(device))
+        z = torch.detach(z.to('cpu')).numpy()
+        plt.scatter(z[:,0][data_y == 0], z[:,1][data_y == 0], c='r', s=1, label='0')
+        plt.scatter(z[:,0][data_y == 1], z[:,1][data_y == 1], c='b', s=1, label='1')
+        plt.scatter(z[:,0][data_y == 2], z[:,1][data_y == 2], c='g', s=1, label='2')
+        plt.legend()
+
+        plt.show()
+        pdb.set_trace()
+
 
 if __name__ == '__main__':
-
-    agent = Agent(
-        nepochs=50,
-        batch_size=128,
-        hidden_layers=[100, 100, 100],
-        n_layers=10,
-    )
-    agent.run_main()
+    if len(sys.argv) > 1:
+        checkpoint_fname = Path(sys.argv[1])
+        meta_fname = checkpoint_fname.parent / 'meta.yaml'
+        agent = Agent.from_meta_file(meta_fname)
+        # agent.show_model_density(xrange=[-4, 4], num=100, checkpoint_fname=checkpoint_fname)
+        agent.show_model_latent()
+    else:
+        agent = Agent(
+            nepochs=50,
+            batch_size=128,
+            hidden_layers=[100, 100, 100],
+            n_layers=10,
+        )
+        agent.run_main()
