@@ -77,7 +77,8 @@ class HW:
         for i in range(self.niter):
             for critic_iter in range(self.ncritic):
                 x_real, _ = next(self.train_loader)
-                z = self.prior.sample((self.batch_size,))
+                x_real = x_real.to(self.device)
+                z = self.prior.sample((self.batch_size,)).to(self.device)
                 eps = np.random.rand()
                 x_fake = self.model.generate(z)
                 x_hat: torch.Tensor = eps * x_real + (1 - eps) * x_fake
