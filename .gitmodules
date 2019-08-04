@@ -13,3 +13,6 @@
 [submodule "hw2/git_rnvp"]
 	path = hw2/git_rnvp
 	url = https://github.com/chrischute/real-nvp.git
+[submodule "hw4/wgan-gp"]
+	path = hw4/wgan-gp
+	url = git@github.com:kouroshHakha/wgan-gp.git
