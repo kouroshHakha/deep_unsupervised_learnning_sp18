@@ -77,7 +77,6 @@ class HW:
         s = time.time()
         for i in range(self.niter):
             for critic_iter in range(self.ncritic):
-                pdb.set_trace()
                 x_real, _ = next(self.train_loader)
                 x_real = x_real.to(self.device)
                 z = self.prior.sample((self.batch_size,)).to(self.device)
