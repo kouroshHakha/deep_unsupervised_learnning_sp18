@@ -12,8 +12,6 @@ import argparse
 
 from utils.logger import TorchLogger
 
-import pdb
-
 class HW:
 
     def __init__(self,
