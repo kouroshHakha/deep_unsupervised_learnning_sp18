@@ -125,8 +125,8 @@ class HW:
                 dw_real = self.model.discriminate(x_real)
                 dw_fake = self.model.discriminate(x_fake)
 
-                dw_hat: torch.Tensor = self.model.discriminate(x_hat)
                 x_hat.requires_grad_(True)
+                dw_hat: torch.Tensor = self.model.discriminate(x_hat)
                 gp = autograd.grad(dw_hat, x_hat, torch.ones(dw_hat.size()).to(self.device),
                                    create_graph=True, retain_graph=True, only_inputs=True)[0]
                 gp = gp.view((self.batch_size,  -1))
