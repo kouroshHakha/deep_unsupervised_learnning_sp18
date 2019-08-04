@@ -7,3 +7,6 @@
 [submodule "hw1/pixelcnn-pytorch2"]
 	path = hw1/pixelcnn-pytorch2
 	url = https://github.com/jzbontar/pixelcnn-pytorch.git
+[submodule "hw4/wgan-gp"]
+	path = hw4/wgan-gp
+	url = git@github.com:kouroshHakha/wgan-gp.git
