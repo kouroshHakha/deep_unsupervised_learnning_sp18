@@ -39,7 +39,7 @@ class HW:
         self.ncritic = ncritic
         self.log_rate = log_rate
         self.ckpt_rate = ckpt_rate
-        self.device = torch.device('cuda:3') if torch.cuda.is_available() else 'cpu'
+        self.device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
 
         if not load:
             meta_data = dict(
