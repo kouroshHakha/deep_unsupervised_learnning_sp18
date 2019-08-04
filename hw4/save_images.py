@@ -1,4 +1,4 @@
-:"""
+"""
 Image grid saver, based on color_grid_vis from github.com/Newmu
 """
 
