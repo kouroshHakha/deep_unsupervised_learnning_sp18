@@ -115,7 +115,6 @@ class HW:
                 p.requires_grad = True
 
             for critic_iter in range(self.ncritic):
-                st = time.time()
                 x_real = next(self.gen_train)
                 nsamples = x_real.shape[0]
                 x_real = x_real.to(self.device)
@@ -126,15 +125,16 @@ class HW:
                 dw_real = self.model.discriminate(x_real)
                 dw_fake = self.model.discriminate(x_fake)
 
-                print(f'forward_pass : {time.time() - st}')
                 x_hat.requires_grad_(True)
                 dw_hat: torch.Tensor = self.model.discriminate(x_hat)
+                st = time.time()
                 gp = autograd.grad(dw_hat, x_hat, torch.ones(dw_hat.size()).to(self.device),
                                    create_graph=True, retain_graph=True, only_inputs=True)[0]
                 gp = gp.view((self.batch_size,  -1))
                 l2_dw_hat_grad = gp.norm(2, dim=-1)
                 loss_critic = - dw_real.mean() + dw_fake.mean() - \
                               self.gamma * ((l2_dw_hat_grad - 1) ** 2).mean()
+                print(f'forward_pass : {time.time() - st}')
 
                 self.opt_critic.zero_grad()
                 loss_critic.backward()
