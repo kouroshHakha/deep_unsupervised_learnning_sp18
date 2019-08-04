@@ -38,7 +38,6 @@ def imshow(img):
     plt.show()
 
 
-
 if __name__ == '__main__':
 
     trainloader, testloader, classes = get_data('./data')

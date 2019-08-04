@@ -62,8 +62,7 @@ class HW:
 
         # real data generator
         self.train_loader, self.test_loader, _ = get_data('./data', batch_size)
-        self.train_loader = iter(self.train_loader)
-        self.test_loader = iter(self.test_loader)
+        self.gen_train = self.inf_train_gen()
         # prior on z ~ p(z)
         self.prior = dist.MultivariateNormal(torch.zeros(nz), torch.eye(nz))
         # inception score
@@ -73,11 +72,17 @@ class HW:
     def log(self):
         return self.logger.log
 
+    def inf_train_gen(self):
+        while True:
+            for images, target in self.train_loader:
+                yield images
+
     def train(self):
         s = time.time()
         for i in range(self.niter):
             for critic_iter in range(self.ncritic):
-                x_real, _ = next(self.train_loader)
+                x_real = next(self.gen_train)
+                pdb.set_trace()
                 nsamples = x_real.shape[0]
                 x_real = x_real.to(self.device)
                 z = self.prior.sample((nsamples,)).to(self.device)
