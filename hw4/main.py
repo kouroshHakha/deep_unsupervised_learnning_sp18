@@ -82,7 +82,6 @@ class HW:
         for i in range(self.niter):
             for critic_iter in range(self.ncritic):
                 x_real = next(self.gen_train)
-                pdb.set_trace()
                 nsamples = x_real.shape[0]
                 x_real = x_real.to(self.device)
                 z = self.prior.sample((nsamples,)).to(self.device)
