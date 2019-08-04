@@ -111,3 +111,7 @@ venv.bak/
 .idea/
 data/
 *images*
+save_dir/
+
+*.pdf
+
