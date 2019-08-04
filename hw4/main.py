@@ -127,18 +127,18 @@ class HW:
 
                 x_hat.requires_grad_(True)
                 dw_hat: torch.Tensor = self.model.discriminate(x_hat)
-                st = time.time()
                 gp = autograd.grad(dw_hat, x_hat, torch.ones(dw_hat.size()).to(self.device),
                                    create_graph=True, retain_graph=True, only_inputs=True)[0]
                 gp = gp.view((self.batch_size,  -1))
                 l2_dw_hat_grad = gp.norm(2, dim=-1)
                 loss_critic = - dw_real.mean() + dw_fake.mean() - \
                               self.gamma * ((l2_dw_hat_grad - 1) ** 2).mean()
-                print(f'forward_pass : {time.time() - st}')
 
+                st = time.time()
                 self.opt_critic.zero_grad()
                 loss_critic.backward()
                 self.opt_critic.step()
+                print(f'forward_pass : {time.time() - st}')
 
             # lowering computation
             for p in self.model.gen.parameters():
