@@ -10,3 +10,4 @@
 [submodule "hw4/wgan-gp"]
 	path = hw4/wgan-gp
 	url = git@github.com:kouroshHakha/wgan-gp.git
+	master = kourosh
