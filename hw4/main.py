@@ -83,8 +83,9 @@ class HW:
 
     def get_inception_score(self, sample_batch=100, split=10):
         all_samples = []
-        samples_100 = torch.randn(sample_batch * split, 128).to(self.device)
-        all_samples.append(self.model.generate(samples_100).cpu().data.numpy())
+        for i in range(split):
+            samples_100 = torch.randn(sample_batch, 128).to(self.device)
+            all_samples.append(self.model.generate(samples_100).cpu().data.numpy())
 
         all_samples = np.concatenate(all_samples, axis=0)
         all_samples = np.multiply(np.add(np.multiply(all_samples, 0.5), 0.5), 255).astype('int32')
