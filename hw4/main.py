@@ -1,6 +1,7 @@
 import hw4.inception_score as inception
 from hw4.model_gan import WGANModel
 from hw4.data_loader import get_data
+from hw4 import save_images
 
 import torch
 import torch.autograd as autograd
@@ -9,6 +10,7 @@ import torch.distributions as dist
 import time
 import numpy as np
 import argparse
+import os
 
 from utils.logger import TorchLogger
 
@@ -27,7 +29,7 @@ class HW:
                  sch_iter_rate=10000,
                  gamma=10,
                  ncritic=5,
-                 log_rate=1000,
+                 log_rate=100,
                  ckpt_rate=1000,
                  ):
 
@@ -68,7 +70,7 @@ class HW:
         # inception score
         self.ins_score = None
 
-        self.log(f'{"iter":<10} | {"gen_loss":<15} | {"critic_loss":<15} | {"IS":<10} | '
+        self.log(f'{"iter":<10} | {"gen_loss":<15} | {"critic_loss":<15} | '
                  f'{"time":<10}')
 
     @property
@@ -91,9 +93,27 @@ class HW:
         all_samples = all_samples.reshape((-1, 3, 32, 32)).transpose(0, 2, 3, 1)
         return inception.get_inception_score(list(all_samples))
 
+        # For generating samples
+    def generate_image(self, frame):
+        os.makedirs('./tmp/cifar10/', exist_ok=True)
+
+        fixed_noise_128 = torch.randn(128, 128).to(self.device)
+        samples = self.model.gen(fixed_noise_128)
+        samples = samples.view(-1, 3, 32, 32)
+        samples = samples.mul(0.5).add(0.5)
+        samples = samples.cpu().data.numpy()
+        save_images.save_images(samples, f'./tmp/cifar10/samples_{frame}.jpg')
+
     def train(self):
         s = time.time()
         for i in range(self.niter):
+
+            # lowering computation
+            for p in self.model.gen.parameters():
+                p.requires_grad = False
+            for p in self.model.disc.parameters():
+                p.requires_grad = True
+
             for critic_iter in range(self.ncritic):
                 x_real = next(self.gen_train)
                 nsamples = x_real.shape[0]
@@ -117,6 +137,12 @@ class HW:
                 loss_critic.backward()
                 self.opt_critic.step()
 
+            # lowering computation
+            for p in self.model.gen.parameters():
+                p.requires_grad = True
+            for p in self.model.disc.parameters():
+                p.requires_grad = False
+
             z = self.prior.sample((self.batch_size, )).to(self.device)
             x_fake = self.model.generate(z)
             dw_fake = self.model.discriminate(x_fake)
@@ -126,13 +152,19 @@ class HW:
             self.opt_gen.step()
 
             if i == 0 or (i + 1) % self.log_rate == 0:
-                ins_score = self.get_inception_score()
                 self.log(f'{i:<10} | {loss_gen.item():<15.4} | {loss_critic.item():<15.4} | '
-                         f'{ins_score[0]:<5.3}{ins_score[1]:<5.3}| '
                          f'{time.time() - s:<10.4}')
                 s = time.time()
+                self.generate_image(i)
+
             if i == 0 or (i + 1) % self.ckpt_rate == 0:
                 self.logger.save_model(self.model)
+
+            ins_score = self.get_inception_score()
+            self.log(f'{i:<10} | {loss_gen.item():<15.4} | {loss_critic.item():<15.4} | '
+                     f'{ins_score[0]:<5.3}{ins_score[1]:<5.3}| '
+                     f'{time.time() - s:<10.4}')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
