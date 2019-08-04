@@ -128,7 +128,8 @@ class HW:
 
             if i == 0 or (i + 1) % self.log_rate == 0:
                 ins_score = self.get_inception_score()
-                self.log(f'{i:<10} | {loss_gen:<15.4} | {loss_critic:<15.4} | {ins_score:<10.2} | '
+                self.log(f'{i:<10} | {loss_gen.item():<15.4} | {loss_critic.item():<15.4} | '
+                         f'{ins_score[0]:<5.2}{ins_score[1]:<5.2}| '
                          f'{time.time() - s:<10.2}')
                 s = time.time()
             if i == 0 or (i + 1) % self.ckpt_rate == 0:
