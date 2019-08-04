@@ -152,7 +152,7 @@ class HW:
             loss_gen.backward()
             self.opt_gen.step()
 
-            if i == 0 or (i + 1) % self.log_rate == 0:
+            if i < 5 or (i + 1) % self.log_rate == 0:
                 self.log(f'{i:<10} | {loss_gen.item():<15.4} | {loss_critic.item():<15.4} | '
                          f'{time.time() - s:<10.4}', show=False)
                 print(f'{i} | {loss_gen.item()} | {loss_critic.item()} | {time.time() - s}')
