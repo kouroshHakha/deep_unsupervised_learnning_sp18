@@ -169,8 +169,8 @@ class Discriminator(nn.Module):
 
         res_block_list = [ResBlockDown(3, (3,3), 128),
                           ResBlockDown(128, (3,3), 128),
-                          ResBlock(128, (3,3), 128),
-                          ResBlock(128, (3,3), 128),
+                          # ResBlock(128, (3,3), 128),
+                          # ResBlock(128, (3,3), 128),
                           nn.ReLU(),
                           nn.AvgPool2d((8,8))]
         self.res_nets = nn.Sequential(*res_block_list)
