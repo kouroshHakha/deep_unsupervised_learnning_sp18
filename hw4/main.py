@@ -90,7 +90,6 @@ class HW:
         all_samples = np.concatenate(all_samples, axis=0)
         all_samples = np.multiply(np.add(np.multiply(all_samples, 0.5), 0.5), 255).astype('int32')
         all_samples = all_samples.reshape((-1, 3, 32, 32)).transpose(0, 2, 3, 1)
-        pdb.set_trace()
         return inception.get_inception_score(list(all_samples))
 
     def train(self):
