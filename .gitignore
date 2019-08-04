@@ -110,7 +110,7 @@ venv.bak/
 *.pkl
 .idea/
 data/
-*images*
+images
 save_dir/
 
 *.pdf
