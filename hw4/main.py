@@ -126,6 +126,7 @@ class HW:
                 dw_real = self.model.discriminate(x_real)
                 dw_fake = self.model.discriminate(x_fake)
 
+                print(f'forward_pass : {time.time() - st}')
                 x_hat.requires_grad_(True)
                 dw_hat: torch.Tensor = self.model.discriminate(x_hat)
                 gp = autograd.grad(dw_hat, x_hat, torch.ones(dw_hat.size()).to(self.device),
@@ -135,7 +136,6 @@ class HW:
                 loss_critic = - dw_real.mean() + dw_fake.mean() - \
                               self.gamma * ((l2_dw_hat_grad - 1) ** 2).mean()
 
-                print(f'forward_pass : {time.time() - st}')
                 self.opt_critic.zero_grad()
                 loss_critic.backward()
                 self.opt_critic.step()
