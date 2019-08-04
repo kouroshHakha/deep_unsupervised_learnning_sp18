@@ -99,7 +99,7 @@ class HW:
                 loss_critic.backward()
                 self.opt_critic.step()
 
-            z = self.prior.sample((self.batch_size, ))
+            z = self.prior.sample((self.batch_size, )).to(self.device)
             x_fake = self.model.generate(z)
             dw_fake = self.model.discriminate(x_fake)
             loss_gen = - dw_fake.mean()
