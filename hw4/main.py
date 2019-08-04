@@ -161,10 +161,10 @@ class HW:
             if i == 0 or (i + 1) % self.ckpt_rate == 0:
                 self.logger.save_model(self.model)
 
-            ins_score = self.get_inception_score()
-            self.log(f'{i:<10} | {loss_gen.item():<15.4} | {loss_critic.item():<15.4} | '
-                     f'{ins_score[0]:<5.3}{ins_score[1]:<5.3}| '
-                     f'{time.time() - s:<10.4}')
+        ins_score = self.get_inception_score()
+        self.log(f'{i:<10} | {loss_gen.item():<15.4} | {loss_critic.item():<15.4} | '
+                 f'{ins_score[0]:<5.3}{ins_score[1]:<5.3}| '
+                 f'{time.time() - s:<10.4}')
 
 
 if __name__ == '__main__':
