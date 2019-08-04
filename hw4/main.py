@@ -115,6 +115,7 @@ class HW:
                 p.requires_grad = True
 
             for critic_iter in range(self.ncritic):
+                st = time.time()
                 x_real = next(self.gen_train)
                 nsamples = x_real.shape[0]
                 x_real = x_real.to(self.device)
@@ -134,6 +135,7 @@ class HW:
                 loss_critic = - dw_real.mean() + dw_fake.mean() - \
                               self.gamma * ((l2_dw_hat_grad - 1) ** 2).mean()
 
+                print(f'forward_pass : {time.time() - st}')
                 self.opt_critic.zero_grad()
                 loss_critic.backward()
                 self.opt_critic.step()
