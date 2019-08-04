@@ -106,11 +106,11 @@ class HW:
             loss_gen.backward()
             self.opt_gen.step()
 
-            if (i + 1) % self.log_rate == 0:
+            if i == 0 or (i + 1) % self.log_rate == 0:
                 self.log(f'iter {i}: gen_loss = {loss_gen}, critic_loss = {loss_critic}, '
                          f'time  = {time.time() - s} secs')
                 s = time.time()
-            if (i + 1) % self.ckpt_rate == 0:
+            if i == 0 or (i + 1) % self.ckpt_rate == 0:
                 self.logger.save_model(self.model)
 
 if __name__ == '__main__':
