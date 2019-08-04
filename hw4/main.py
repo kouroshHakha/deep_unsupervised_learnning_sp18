@@ -10,6 +10,7 @@ from utils.logger import TorchLogger
 
 from hw4.model_gan import WGANModel
 from hw4.data_loader import get_data
+import hw4.inception_score as inception
 import pdb
 
 class HW:
@@ -68,6 +69,9 @@ class HW:
         # inception score
         self.ins_score = None
 
+        self.log(f'{"iter":<10} | {"gen_loss":<15} | {"critic_loss":<15} | {"IS":<10} | '
+                 f'{"time":<10}')
+
     @property
     def log(self):
         return self.logger.log
@@ -76,6 +80,17 @@ class HW:
         while True:
             for images, target in self.train_loader:
                 yield images
+
+    def get_inception_score(self, sample_batch=100, split=10):
+        all_samples = []
+        samples_100 = torch.randn(sample_batch * split, 128).to(self.device)
+        all_samples.append(self.model.generate(samples_100).cpu().data.numpy())
+
+        all_samples = np.concatenate(all_samples, axis=0)
+        all_samples = np.multiply(np.add(np.multiply(all_samples, 0.5), 0.5), 255).astype('int32')
+        all_samples = all_samples.reshape((-1, 3, 32, 32)).transpose(0, 2, 3, 1)
+        pdb.set_trace()
+        return inception.get_inception_score(list(all_samples))
 
     def train(self):
         s = time.time()
@@ -112,8 +127,9 @@ class HW:
             self.opt_gen.step()
 
             if i == 0 or (i + 1) % self.log_rate == 0:
-                self.log(f'iter {i}: gen_loss = {loss_gen}, critic_loss = {loss_critic}, '
-                         f'time  = {time.time() - s} secs')
+                ins_score = self.get_inception_score()
+                self.log(f'{i:<10} | {loss_gen:<15.4} | {loss_critic:<15.4} | {ins_score:<10.2} | '
+                         f'{time.time() - s:<10.2}')
                 s = time.time()
             if i == 0 or (i + 1) % self.ckpt_rate == 0:
                 self.logger.save_model(self.model)
